@@ -14,8 +14,8 @@ var Add = cli.Command{
 	UsageText: `wdbib add [Q-identifier...]
 
    Example:
-     wdbib add Q24347512
-     wdbib add Q21090025 Q22253877`,
+  	 wdbib add -w Q24347512
+     wdbib add --wikidata Q24347512`,
 	Description: fmt.Sprintf("wdbib adds an uri describing a citation to a file called `%s`"+
 		", and downloads the bibliographical item based on Wikidata's QID to a file called `%s`",
 		storage.DefaultDataFilename, storage.DefaultCachedDataFilename),
