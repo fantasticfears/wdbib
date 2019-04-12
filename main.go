@@ -8,13 +8,12 @@ import (
 )
 
 func main() {
-	commands := []*cli.Command{&commands.Add, &commands.List, &commands.Update, &commands.Search, &commands.Version}
 	app := &cli.App{
 		Name:        "wdbib",
 		Description: "a program manages bibliographical library based on Wikidata.",
 		HideHelp:    true,
 		HideVersion: true,
-		Commands:    commands,
+		Commands:    []*cli.Command{&commands.Add, &commands.List, &commands.Update, &commands.Search, &commands.Version},
 	}
 
 	app.Run(os.Args)
