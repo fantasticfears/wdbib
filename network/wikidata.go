@@ -2,6 +2,12 @@ package network
 
 import (
 	"encoding/json"
+	"errors"
+	"io/ioutil"
+	"net/http"
+	"time"
+
+	"github.com/fantasticfears/wdbib/internals"
 )
 
 type LangItem struct {
@@ -155,4 +161,41 @@ func ParseWikidataResponse(buf []byte) ([]WikidataItem, error) {
 		items = append(items, item)
 	}
 	return items, nil
+}
+
+// GetWikidataItem requests Wikidata API and download content
+func GetWikidataItem(qID string) (*WikidataItem, error) {
+	wdClient := http.Client{
+		Timeout: time.Second * 2,
+	}
+
+	url := "https://www.wikidata.org/wiki/Special:EntityData/" + qID + ".json"
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("User-Agent", internals.UserAgent)
+
+	res, getErr := wdClient.Do(req)
+	if getErr != nil {
+		return nil, getErr
+	}
+
+	body, readErr := ioutil.ReadAll(res.Body)
+	if readErr != nil {
+		return nil, readErr
+	}
+
+	items, parseErr := ParseWikidataResponse(body)
+	if parseErr != nil {
+		return nil, parseErr
+	}
+	for _, item := range items {
+		if item.Id == qID {
+			return &item, nil
+		}
+	}
+	return nil, errors.New("no data was found")
 }

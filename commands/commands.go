@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 
+	"github.com/fantasticfears/wdbib/interals"
 	"github.com/fantasticfears/wdbib/storage"
 	"gopkg.in/urfave/cli.v2"
 )
@@ -113,7 +114,7 @@ var Version = cli.Command{
 	Usage:    "Show version of the program.",
 	HideHelp: true,
 	Action: func(c *cli.Context) error {
-		fmt.Println(version)
+		fmt.Println(interals.VersionStr)
 		return nil
 	},
 }
