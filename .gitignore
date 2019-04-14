@@ -1,23 +1,41 @@
 
-# Created by https://www.gitignore.io/api/go
-# Edit at https://www.gitignore.io/?templates=go
+# Created by https://www.gitignore.io/api/c++
+# Edit at https://www.gitignore.io/?templates=c++
 
-### Go ###
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
+build/
+
+### C++ ###
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
 *.so
 *.dylib
+*.dll
 
-# Test binary, built with `go test -c`
-*.test
+# Fortran module files
+*.mod
+*.smod
 
-# Output of the go coverage tool, specifically when used with LiteIDE
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
 *.out
+*.app
 
-### Go Patch ###
-/vendor/
-/Godeps/
-
-# End of https://www.gitignore.io/api/go
+# End of https://www.gitignore.io/api/c++
