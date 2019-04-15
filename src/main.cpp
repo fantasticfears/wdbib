@@ -20,7 +20,7 @@ int main(int argc, char** argv)
   network->set_level(spdlog::level::debug);
   auto err_logger = spdlog::stderr_color_mt("stderr");
 
-  CLI::App app{"wdbib manages bibliographical library based on Wikidata."};
+  CLI::App app{"wdbib - a program manages bibliographical library based on Wikidata."};
 
   auto add_cmd = app.add_subcommand("add", "add a citation to the library");
   vector<string> add_qIDs;
