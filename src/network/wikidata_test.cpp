@@ -24,10 +24,10 @@ std::string readFixtureFile(const std::string& path)
 
 using Catch::Matchers::Equals;
 
-TEST_CASE("parse a wikidata item", "[parsing]")
+TEST_CASE("parse a wikidata (wikicite) item", "[parsing]")
 {
   auto buf = readFixtureFile("src/fixtures/Q163335.json");
-  auto i = ParseWikidataJson("Q163335", buf);
+  auto i = ParseWikiciteJson("Q163335", buf);
   REQUIRE_THAT(i.id, Equals("Q163335"));
   REQUIRE_THAT(i.labels["en"][0], Equals("Principia Mathematica"));
   REQUIRE_THAT(
