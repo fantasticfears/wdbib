@@ -1,3 +1,5 @@
+#pragma once
+
 #include "../network/wikidata.h"
 
 #include <iostream>

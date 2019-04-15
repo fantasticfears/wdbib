@@ -5,6 +5,7 @@
 #include <string_view>
 
 #include <absl/strings/str_split.h>
+#include "rang.hpp"
 
 #include "../storage/data_file.h"
 
@@ -20,7 +21,15 @@ void ProcessList()
     if (p.first != "wc") {
       continue;
     }
-    cout << p.second << endl;
+    auto status = "local";
+    constexpr auto kLocalStatus = "local";
+    constexpr auto kCachedStatus = "cached";
+    if (status == kLocalStatus) {
+      cout << '[' << rang::fg::red << kLocalStatus << rang::fg::reset << "] ";
+    } else {
+      cout << '[' << rang::fg::magenta << kCachedStatus << rang::fg::reset << "] ";
+    }
+    cout << rang::fg::blue << p.second << rang::fg::reset << endl;
   }
 }
 
