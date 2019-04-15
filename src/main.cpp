@@ -7,6 +7,7 @@
 #include "spdlog/spdlog.h"
 
 #include "commands/add.h"
+#include "commands/list.h"
 #include "commands/version.h"
 
 using std::string;
@@ -31,11 +32,17 @@ int main(int argc, char** argv)
       ProcessAddQID(qID);
     }
   });
+
   auto version_cmd =
       app.add_subcommand("version", "show version of the program.");
   version_cmd->callback(wdbib::VersionCallback);
+
   auto list_cmd =
       app.add_subcommand("list", "lists all add a citation to the library.");
+  list_cmd->callback([&]() {
+    ProcessList();
+  });
+
   auto search_cmd =
       app.add_subcommand("search", "Search bibliographical items on Wikidata.");
 
