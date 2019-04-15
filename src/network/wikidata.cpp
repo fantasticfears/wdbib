@@ -1,10 +1,12 @@
 #include "wikidata.h"
 
-#include <boost/asio/connect.hpp>
-#include <boost/asio/ip/tcp.hpp>
+#include <absl/strings/str_cat.h>
+#include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
+#include "spdlog/spdlog.h"
 
 #include "../system.h"
 
@@ -66,18 +68,23 @@ wd::WikiCiteItem ParseWikiciteJson(const string& id, const string& json_str)
 
 using tcp = boost::asio::ip::tcp;     // from <boost/asio/ip/tcp.hpp>
 namespace http = boost::beast::http;  // from <boost/beast/http.hpp>
-const char* kWikidataHost = "www.wikidata.org";
-const char* kWikidataPort = "443";
+namespace ssl = boost::asio::ssl;
+
+const char* const kWikidataHost = "www.wikidata.org";
+const char* const kWikidataPort = "443";
 const int kHttpVersion = 11;
 
 string getWikidataItem(const string& qID)
 {
   boost::asio::io_context ioc;
-  tcp::resolver resolver{ioc};
-  tcp::socket socket{ioc};
+  ssl::context ctx(ssl::context::method::tls_client);
+  ssl::stream<tcp::socket> ssock(ioc, ctx);
 
-  auto const results = resolver.resolve(kWikidataHost, kWikidataPort);
-  boost::asio::connect(socket, results.begin(), results.end());
+  tcp::resolver resolver(ioc);
+  auto it = resolver.resolve({kWikidataHost, kWikidataPort});
+
+  boost::asio::connect(ssock.lowest_layer(), it);
+  ssock.handshake(ssl::stream_base::handshake_type::client);
 
   string target = absl::StrCat("/wiki/Special:EntityData/", qID, ".json");
   http::request<http::string_body> req{http::verb::get, target, kHttpVersion};
@@ -85,15 +92,19 @@ string getWikidataItem(const string& qID)
   static auto ua = GetUserAgent();
   req.set(http::field::user_agent, ua);
 
-  http::write(socket, req);
+  spdlog::get("network")->debug("requesting: " + target);
+
+  http::write(ssock, req);
 
   boost::beast::flat_buffer buffer;
   http::response<http::dynamic_body> res;
-  http::read(socket, buffer, res);
-  return boost::beast::buffers_to_string(res.body().data);
+  http::read(ssock, buffer, res);
+  spdlog::get("network")->debug("requesting: " + boost::beast::buffers_to_string(res.body().data()));
+
+  return boost::beast::buffers_to_string(res.body().data());
 }
 
-wd::WikiCiteItem GetWikiciteItem(string qID)
+wd::WikiCiteItem GetWikiciteItem(const string& qID)
 {
   return ParseWikiciteJson(qID, getWikidataItem(qID));
 }
