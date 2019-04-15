@@ -17,9 +17,10 @@ using namespace wdbib;
 int main(int argc, char** argv)
 {
   std::ios::sync_with_stdio(false);
-  auto network = spdlog::stdout_color_mt("network");
-  network->set_level(spdlog::level::debug);
+  auto network = spdlog::stderr_color_mt("network");
+  // network->set_level(spdlog::level::debug);
   auto err_logger = spdlog::stderr_color_mt("stderr");
+  err_logger->set_level(spdlog::level::debug);
 
   CLI::App app{"wdbib - a program manages bibliographical library based on Wikidata."};
 
@@ -28,9 +29,7 @@ int main(int argc, char** argv)
   add_cmd->add_option("-q,--qid", add_qIDs,
                       "citation Q-identifier on Wikidata");
   add_cmd->callback([&]() {
-    for (const auto& qID : add_qIDs) {
-      ProcessAddQID(qID);
-    }
+    ProcessAddQIDs(add_qIDs);
   });
 
   auto version_cmd =

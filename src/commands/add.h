@@ -6,6 +6,8 @@
 
 namespace wdbib {
 
+void ProcessAddQIDs(const vector<string>& qIDs);
+
 void ProcessAddQID(const string& qID);
 
 } // namespace wdbib
