@@ -4,9 +4,8 @@
 #include <iostream>
 #include <memory>
 
+#include <absl/strings/str_cat.h>
 #include <fmt/format.h>
-#include <boost/asio/post.hpp>
-#include <boost/asio/thread_pool.hpp>
 
 #include "../network/wikidata.h"
 #include "../storage/data_file.h"
@@ -19,8 +18,7 @@ void SetupAddSubCommand(CLI::App& app)
   auto cmd = app.add_subcommand("add", "add a citation to the library");
   auto opt = std::make_shared<AddSubCmdOpt>();
 
-  cmd->add_option("-q,--qid", opt->qids,
-                      "citation Q-identifier on Wikidata");
+  cmd->add_option("-q,--qid", opt->qids, "citation Q-identifier on Wikidata");
   cmd->callback([opt]() { RunAddSubCommand(*opt); });
 }
 
@@ -35,23 +33,15 @@ constexpr size_t kMaxThreadPoolSize = 8;
 
 void RunAddSubCommand(const AddSubCmdOpt& opt)
 {
-  using namespace std;
-
   auto pool_size = std::max(opt.qids.size(), kMaxThreadPoolSize);
-  boost::asio::thread_pool pool(pool_size);
+  spinners::MultiLineSpinner spinner("Loading", pool_size);
 
   for (const auto& qid : opt.qids) {
-    spinners::Spinner spinner("Adding " + qid);
-    boost::asio::post(pool, [&]() {
-      ProcessAddQID(qid);
-      spinner.stop();
-      cout << "Added " + qid << endl;
-    });
-    spinner.startSpinner();
+    auto l = spinner.append(
+        {spinners::SpinnerStatus::kPending, absl::StrCat("Adding ", qid),
+         absl::StrCat("Added", qid), [&]() { ProcessAddQID(qid); }});
   }
-
-  pool.join();
-
+  spinner.LoopSpinner();
 }
 
 }  // namespace wdbib

@@ -1,72 +1,109 @@
 #pragma once
 
 #include <chrono>
+#include <functional>
 #include <iostream>
 #include <map>
 #include <sstream>
 #include <thread>
+#include <vector>
+
+#include <boost/asio/post.hpp>
+#include <boost/asio/thread_pool.hpp>
 
 namespace wdbib {
 
 namespace spinners {
 
-const char *const kDotSpinner = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
+using std::cout;
+using std::endl;
+using std::function;
+using std::string;
+using std::vector;
 
-class Spinner
+enum class SpinnerStatus
+{
+  kPending,
+  kLoading,
+  kFinished
+};
+struct SpinnerObject
+{
+  SpinnerStatus status;
+  string pending_text;
+  string finsihed_text;
+  function<void(void)> callback;
+  void Start() { status = SpinnerStatus::kLoading; }
+};
+
+const char* const kDotSpinner = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
+
+class MultiLineSpinner
 {
  public:
-  Spinner(std::string _text)
-      : interval(80), text(_text), stop_spinner(false), symbols(kDotSpinner){};
-  Spinner() : interval(), text(""), stop_spinner(false), symbols(kDotSpinner){};
-  Spinner(int _interval, std::string _text, const char *_symbols)
-      : interval(_interval),
-        text(_text),
-        stop_spinner(false),
-        symbols(kDotSpinner){};
-  ~Spinner() { stop(); };
-
-  void setInterval(int _interval) { interval = _interval; }
-  void setText(std::string _text) { text = _text; }
-
-  void startSpinner()
+  MultiLineSpinner(const string& loading_text, int32_t pool_size,
+                   int32_t interval = 80)
+      : loading_text_(loading_text), interval_(interval), pool_(pool_size){};
+  ~MultiLineSpinner() { pool_.join(); }
+  SpinnerObject* append(SpinnerObject&& obj)
   {
-    int len = strlen(symbols) / 3;
-    int i = 0;
-    char ch[4];
-
-    hideCursor();
-    while (!stop_spinner) {
-      i = (i >= (len - 1)) ? 0 : i + 1;
-      strncpy(ch, symbols + i * 3, 3);
-      std::cout << ch << " " << text << " \r";
-      std::cout.flush();
-      std::this_thread::sleep_for(std::chrono::milliseconds(80));
-    }
-
-    showCursor();
+    lines_.push_back(obj);
+    return &lines_.back();
   }
 
-  void start() { t = std::thread(&Spinner::startSpinner, this); }
-
-  void stop()
+  void LoopSpinner()
   {
-    stop_spinner = true;
-    if (t.joinable()) {
-      t.join();
+    hideCursor();
+
+    bool unfinished = true;
+    while (unfinished) {
+      unfinished = false;
+
+      for (auto& l : lines_) {
+        switch (l.status) {
+        case SpinnerStatus::kPending:
+          unfinished = true;
+          cout << l.pending_text << endl;
+          break;
+        case SpinnerStatus::kLoading:
+          unfinished = true;
+          static int len = strlen(kDotSpinner) / 3;
+          int i = 0;
+          char ch[4];
+
+          i = (i >= (len - 1)) ? 0 : i + 1;
+          strncpy(ch, kDotSpinner + i * 3, 3);
+          cout << ch << " " << loading_text_ << " \r";
+
+          boost::asio::post(pool_, [&]() {
+            l.callback();
+            l.status = SpinnerStatus::kFinished;
+          });
+          break;
+        case SpinnerStatus::kFinished:
+          cout << l.finsihed_text << endl;
+          break;
+        default:
+          break;
+        }
+      }
+      cout.flush();
+
+      std::this_thread::sleep_for(std::chrono::milliseconds(interval_));
     }
+    showCursor();
   }
 
  private:
   int interval;
-  std::string text;
-  bool stop_spinner;
-  const char *symbols;
-  std::thread t;
-
+  string loading_text_;
+  vector<SpinnerObject> lines_;
+  int32_t interval_;
+  boost::asio::thread_pool pool_;
   void hideCursor() { std::cout << "\u001b[?25l"; }
-
   void showCursor() { std::cout << "\u001b[?25h"; }
 };
+
 }  // namespace spinners
 
 // PrintHighlight()
