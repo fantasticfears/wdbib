@@ -34,12 +34,12 @@ constexpr size_t kMaxThreadPoolSize = 8;
 void RunAddSubCommand(const AddSubCmdOpt& opt)
 {
   auto pool_size = std::max(opt.qids.size(), kMaxThreadPoolSize);
-  spinners::MultiLineSpinner spinner("Loading", pool_size);
+  spinners::MultiLineSpinner spinner(pool_size);
 
   for (const auto& qid : opt.qids) {
-    auto l = spinner.append(
-        {spinners::SpinnerStatus::kPending, absl::StrCat("Adding ", qid),
-         absl::StrCat("Added", qid), [&]() { ProcessAddQID(qid); }});
+    spinner.register_append(
+        {spinners::SpinnerStatus::kPending, absl::StrCat("Adding ", qid, "..."),
+         absl::StrCat("Adding ", qid, " done"), [&]() { ProcessAddQID(qid); }});
   }
   spinner.LoopSpinner();
 }

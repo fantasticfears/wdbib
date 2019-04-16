@@ -30,10 +30,11 @@ int main(int argc, char** argv)
   SetupVersionSubCommand(app);
   SetupViewSubCommand(app);
 
+  auto exit_code = 0;
   try {
     app.parse(argc, argv);
   } catch (const CLI::ParseError& e) {
-    return app.exit(e);
+    exit_code = app.exit(e);
   }
-  return 0;
+  return exit_code;
 }
