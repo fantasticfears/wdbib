@@ -98,6 +98,12 @@ class BibDataLockFile
       data_[key] = value;
     }
   }
+
+  bool Found(const string& qid)
+  {
+    return data_.find(qid) != data_.end();
+  }
+
   void Save()
   {
     std::ofstream f(path_, std::ios::out | std::ios::trunc);

@@ -18,26 +18,26 @@ void SetupListSubCommand(CLI::App& app)
   cmd->callback([]() { RunListSubCommand(); });
 }
 
+constexpr auto kLocalStatus = "local";
+constexpr auto kCachedStatus = "cached";
+
 void RunListSubCommand()
 {
   using namespace std;
 
-  auto citation_file_content = file::ReadAll("citation");
-  for (const auto& line : absl::StrSplit(citation_file_content, '\n')) {
-    pair<string_view, string_view> p = absl::StrSplit(line, ':');
-    if (p.first != "wc") {
-      continue;
-    }
-    auto status = "local";
-    constexpr auto kLocalStatus = "local";
-    constexpr auto kCachedStatus = "cached";
+  BibDataFile bib("citation");
+  BibDataLockFile lock("citation.lock");
+
+  auto c = bib.Parse();
+  for (const auto& item : c.items) {
+    auto status = lock.Found(item.qid) ? "cached" : "local";
     if (status == kLocalStatus) {
       cout << '[' << rang::fg::red << kLocalStatus << rang::fg::reset << "] ";
     } else {
       cout << '[' << rang::fg::magenta << kCachedStatus << rang::fg::reset
            << "] ";
     }
-    cout << rang::fg::blue << p.second << rang::fg::reset << endl;
+    cout << rang::fg::blue << item.qid << rang::fg::reset << endl;
   }
 }
 
