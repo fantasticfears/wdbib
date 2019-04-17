@@ -3,6 +3,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <utility>
 
 #include <nlohmann/json.hpp>
 
@@ -52,6 +53,6 @@ wd::WikiCiteItem ParseWikiciteJson(const string& id, const string& json_str);
  * Performs a network request to Wikidata and downloads file.
  * Throws exceptions.
  */
-wd::WikiCiteItem GetWikiciteItem(const string& qID);
+std::pair<wd::WikiCiteItem, string> GetWikiciteItem(const string& qID);
 
 }  // namespace wdbib

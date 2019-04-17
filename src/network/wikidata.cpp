@@ -104,9 +104,12 @@ string getWikidataItem(const string& qID)
   return boost::beast::buffers_to_string(res.body().data());
 }
 
-wd::WikiCiteItem GetWikiciteItem(const string& qID)
+std::pair<wd::WikiCiteItem, string> GetWikiciteItem(const string& qID)
 {
-  return ParseWikiciteJson(qID, getWikidataItem(qID));
+  string item_json = getWikidataItem(qID);
+  return std::make_pair(ParseWikiciteJson(qID, item_json), item_json);
 }
+
+
 
 }  // namespace wdbib

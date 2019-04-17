@@ -5,6 +5,7 @@
 #include <memory>
 #include <optional>
 #include <unordered_set>
+#include <utility>
 
 #include <absl/strings/str_cat.h>
 #include <absl/strings/str_join.h>
@@ -27,12 +28,13 @@ void SetupAddSubCommand(CLI::App& app)
   cmd->callback([opt]() { RunAddSubCommand(*opt); });
 }
 
-optional<Citation> requestCitationFromQID(const string& qid,
+typedef pair<Citation, string> CitationResult;
+optional<CitationResult> requestCitationFromQID(const string& qid,
                                           const CitationHints& hints)
 {
   auto item = GetWikiciteItem(qid);
-  Citation cite{qid};
-  return {cite};
+  Citation cite{item.first.id};
+  return {make_pair(cite, item.second)};
 }
 
 constexpr size_t kMaxThreadPoolSize = 8;
@@ -49,14 +51,20 @@ void RunAddSubCommand(const AddSubCmdOpt& opt)
     stored_qids.insert(i.qid);
   }
 
-  vector<optional<Citation>> cites(opt.qids.size(), nullopt);
+  vector<optional<CitationResult>> cites(opt.qids.size(), nullopt);
   int i = 0;
   for (const auto& qid : opt.qids) {
     if (stored_qids.find(qid) == stored_qids.end()) {
       spinner.register_append(
           {spinners::SpinnerStatus::kPending, absl::StrCat("Adding ", qid, "..."),
           absl::StrCat("Adding ", qid, " done"),
-          [&, i]() { cites[i] = requestCitationFromQID(qid, c.path_spec); }});
+          [&, i]() {
+            try {
+              cites[i] = requestCitationFromQID(qid, c.path_spec);
+            } catch (...) {
+
+            }
+               }});
     } else {
       spinner.register_append(
         {spinners::SpinnerStatus::kFinished, "",
@@ -67,16 +75,19 @@ void RunAddSubCommand(const AddSubCmdOpt& opt)
     i++;
   }
   spinner.LoopSpinner();
+  BibDataLockFile cached("citation.lock");
   for (const auto& cite : cites) {
     if (cite) {
-      c.items.push_back(*cite);
+      c.items.push_back(cite->first);
 
-      string repr = absl::StrCat("wc:", cite->qid);
-      absl::StrAppend(&repr, ":", absl::StrJoin(cite->aux_info, ":"));
+      string repr = absl::StrCat("wc:", cite->first.qid);
+      absl::StrAppend(&repr, ":", absl::StrJoin(cite->first.aux_info, ":"));
       c.text.push_back(repr);
+      cached.update(cite->second);
     }
   }
   bib.Save(c);
+  cached.Save();
 }
 
 }  // namespace wdbib
