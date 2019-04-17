@@ -32,4 +32,12 @@ void RunViewSubCommand(const ViewSubCmdOpt& opt);
 
 void SetupSyncSubCommand(CLI::App& app);
 
+struct ConvertSubCmdOpt
+{
+  std::string output_path;
+};
+void SetupConvertSubCommand(CLI::App& app);
+void RunConvertSubCommand(const ConvertSubCmdOpt& opt);
+
+
 }  // namespace wdbib

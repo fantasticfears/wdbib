@@ -2,11 +2,13 @@
 
 #include <fstream>
 #include <memory>
-#include <nlohmann/json.hpp>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
+#include <unordered_map>
+
+#include <nlohmann/json.hpp>
 
 namespace wdbib {
 
@@ -14,6 +16,7 @@ using std::optional;
 using std::string;
 using std::string_view;
 using std::vector;
+using std::unordered_map;
 
 namespace content {
 
@@ -97,6 +100,15 @@ class BibDataLockFile
     for (auto& [key, value] : r.at("entities").items()) {
       data_[key] = value;
     }
+  }
+
+  unordered_map<string, json> All() const
+  {
+    unordered_map<string, json> res;
+    for (auto& [key, value] : data_.items()) {
+      res[key] = value;
+    }
+    return res;
   }
 
   bool Found(const string& qid)

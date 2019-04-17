@@ -17,6 +17,7 @@ void runSyncSubCommand()
     qids.push_back(item.qid);
   }
   lock.update(GetWikidataItems(qids));
+  lock.Save();
 }
 
 void SetupSyncSubCommand(CLI::App& app)

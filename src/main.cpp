@@ -30,6 +30,7 @@ int main(int argc, char** argv)
   SetupSyncSubCommand(app);
   SetupVersionSubCommand(app);
   SetupViewSubCommand(app);
+  SetupConvertSubCommand(app);
 
   auto exit_code = 0;
   try {
