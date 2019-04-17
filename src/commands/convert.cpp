@@ -22,7 +22,7 @@ void SetupConvertSubCommand(CLI::App& app)
 
 void RunConvertSubCommand(const ConvertSubCmdOpt& opt)
 {
-  BibDataLockFile lock("citation.lock");
+  BibDataLockFile lock(kDefaultCachedDataFilename);
   auto items = lock.All();
 
   ofstream out(opt.output_path);

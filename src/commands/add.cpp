@@ -43,7 +43,7 @@ void RunAddSubCommand(const AddSubCmdOpt& opt)
 {
   auto pool_size = std::max(opt.qids.size(), kMaxThreadPoolSize);
   spinners::MultiLineSpinner spinner(pool_size);
-  BibDataFile bib("citation");
+  BibDataFile bib(kDefaultDataFilename);
   auto c = bib.Parse();
 
   unordered_set<string> stored_qids;
@@ -75,7 +75,7 @@ void RunAddSubCommand(const AddSubCmdOpt& opt)
     i++;
   }
   spinner.LoopSpinner();
-  BibDataLockFile cached("citation.lock");
+  BibDataLockFile cached(kDefaultCachedDataFilename);
   for (const auto& cite : cites) {
     if (cite) {
       c.items.push_back(cite->first);

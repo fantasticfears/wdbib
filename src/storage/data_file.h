@@ -18,6 +18,12 @@ using std::string_view;
 using std::vector;
 using std::unordered_map;
 
+// kDefaultDataFilename is the filename for storing uris
+const char* const kDefaultDataFilename = "citation";
+
+// kDefaultCachedDataFilename is the filename for storing cached wikidata information
+const char* const kDefaultCachedDataFilename = "citation.lock";
+
 namespace content {
 
 const char* const kDefaultHints = "";

@@ -7,8 +7,8 @@ namespace wdbib {
 
 void runSyncSubCommand()
 {
-  BibDataFile bib("citation");
-  BibDataLockFile lock("citation.lock");
+  BibDataFile bib(kDefaultDataFilename);
+  BibDataLockFile lock(kDefaultCachedDataFilename);
 
   auto c = bib.Parse();
   vector<string> qids;

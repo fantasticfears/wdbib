@@ -25,8 +25,8 @@ void RunListSubCommand()
 {
   using namespace std;
 
-  BibDataFile bib("citation");
-  BibDataLockFile lock("citation.lock");
+  BibDataFile bib(kDefaultDataFilename);
+  BibDataLockFile lock(kDefaultCachedDataFilename);
 
   auto c = bib.Parse();
   for (const auto& item : c.items) {
