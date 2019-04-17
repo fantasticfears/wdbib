@@ -15,7 +15,7 @@ namespace wdbib {
 
 namespace wd {
 
-void from_json(const json& j, WikiCiteItem& p)
+void from_json(const json& j, WikidataItem& p)
 {
   j.at("id").get_to(p.id);
   auto labels = j.at("labels");
@@ -59,12 +59,12 @@ void from_json(const json& j, WikiCiteItem& p)
 
 }  // namespace wd
 
-wd::WikiCiteItem ParseWikiciteJson(const string& id, const string& json_str)
+wd::WikidataItem ParseWikiciteJson(const string& id, const string& json_str)
 {
   using nlohmann::json;
 
   auto t = json::parse(json_str);
-  return t.at("entities").at(id).get<wd::WikiCiteItem>();
+  return t.at("entities").at(id).get<wd::WikidataItem>();
 }
 
 using tcp = boost::asio::ip::tcp;     // from <boost/asio/ip/tcp.hpp>
@@ -111,7 +111,7 @@ string GetWikidataItems(const vector<string>& q_ids)
 }
 
 
-std::pair<wd::WikiCiteItem, string> GetWikiciteItem(const string& qID)
+std::pair<wd::WikidataItem, string> GetWikiciteItem(const string& qID)
 {
   string item_json = GetWikidataItems(qID);
   return std::make_pair(ParseWikiciteJson(qID, item_json), item_json);

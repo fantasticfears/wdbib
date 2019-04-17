@@ -94,7 +94,7 @@ class BibDataLockFile
       data_ = json();
     }
   }
-  void update(const string& resp)
+  void update(const string& resp, const string& id)
   {
     auto r = json::parse(resp);
     for (auto& [key, value] : r.at("entities").items()) {
