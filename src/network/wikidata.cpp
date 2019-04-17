@@ -1,6 +1,7 @@
 #include "wikidata.h"
 
 #include <absl/strings/str_cat.h>
+#include <absl/strings/str_join.h>
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/beast/core.hpp>
@@ -74,7 +75,7 @@ const char* const kWikidataHost = "www.wikidata.org";
 const char* const kWikidataPort = "443";
 const int kHttpVersion = 11;
 
-string getWikidataItem(const string& qID)
+string GetWikidataItems(const string& query_ids)
 {
   boost::asio::io_context ioc;
   ssl::context ctx(ssl::context::method::tls_client);
@@ -86,7 +87,7 @@ string getWikidataItem(const string& qID)
   boost::asio::connect(ssock.lowest_layer(), it);
   ssock.handshake(ssl::stream_base::handshake_type::client);
 
-  string target = absl::StrCat("/wiki/Special:EntityData/", qID, ".json");
+  string target = absl::StrCat("/w/api.php?action=wbgetentities&format=json&ids=", query_ids);
   http::request<http::string_body> req{http::verb::get, target, kHttpVersion};
   req.set(http::field::host, kWikidataHost);
   static auto ua = GetUserAgent();
@@ -104,12 +105,16 @@ string getWikidataItem(const string& qID)
   return boost::beast::buffers_to_string(res.body().data());
 }
 
-std::pair<wd::WikiCiteItem, string> GetWikiciteItem(const string& qID)
+string GetWikidataItems(const vector<string>& q_ids)
 {
-  string item_json = getWikidataItem(qID);
-  return std::make_pair(ParseWikiciteJson(qID, item_json), item_json);
+  return GetWikidataItems(absl::StrJoin(q_ids, "|"));
 }
 
 
+std::pair<wd::WikiCiteItem, string> GetWikiciteItem(const string& qID)
+{
+  string item_json = GetWikidataItems(qID);
+  return std::make_pair(ParseWikiciteJson(qID, item_json), item_json);
+}
 
 }  // namespace wdbib

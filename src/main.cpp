@@ -27,6 +27,7 @@ int main(int argc, char** argv)
 
   SetupAddSubCommand(app);
   SetupListSubCommand(app);
+  SetupSyncSubCommand(app);
   SetupVersionSubCommand(app);
   SetupViewSubCommand(app);
 

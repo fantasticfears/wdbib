@@ -12,10 +12,9 @@ namespace wdbib {
 using std::string;
 using std::unordered_map;
 using std::vector;
+using nlohmann::json;
 
 namespace wd {
-
-using nlohmann::json;
 
 enum class DataValueType
 {
@@ -54,5 +53,8 @@ wd::WikiCiteItem ParseWikiciteJson(const string& id, const string& json_str);
  * Throws exceptions.
  */
 std::pair<wd::WikiCiteItem, string> GetWikiciteItem(const string& qID);
+
+string GetWikidataItems(const string& query_ids);
+string GetWikidataItems(const vector<string>& q_ids);
 
 }  // namespace wdbib

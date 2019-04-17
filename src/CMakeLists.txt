@@ -7,6 +7,7 @@ add_library(libwdbib
     commands/view.cpp
     commands/search.cpp
     commands/version.cpp
+    commands/sync.cpp
 )
 target_link_libraries(libwdbib PRIVATE ssl crypto spdlog::spdlog CLI11::CLI11 nlohmann_json::nlohmann_json unofficial::abseil::strings ${Boost_LIBRARIES} fmt::fmt-header-only)
 target_include_directories(libwdbib PRIVATE ${Boost_INCLUDE_DIRS})

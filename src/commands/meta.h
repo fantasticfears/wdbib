@@ -30,4 +30,6 @@ struct ViewSubCmdOpt
 void SetupViewSubCommand(CLI::App& app);
 void RunViewSubCommand(const ViewSubCmdOpt& opt);
 
+void SetupSyncSubCommand(CLI::App& app);
+
 }  // namespace wdbib
