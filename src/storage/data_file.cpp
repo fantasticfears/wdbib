@@ -118,6 +118,17 @@ optional<Citation> ParseCitation(const CitationHints& hints,
 
 BibDataFile::BibDataFile(const string& path) : path_(path) {}
 
+void BibDataFile::Save(const BibDataFileContent& content) const
+{
+  ofstream fout(path_);
+  for (const auto& h : content.headers) {
+    fout << h << endl;
+  }
+  for (const auto& c : content.text) {
+    fout << c << endl;
+  }
+}
+
 BibDataFileContent BibDataFile::Parse() const
 {
   ifstream fin(path_);
@@ -145,18 +156,26 @@ BibDataFileContent BibDataFile::Parse() const
       break;
     }
   }
+  if (bib.headers.empty()) {
+    bib.headers.push_back(content::kDefaultHeader);
+  }
+
 
   if (break_header) {
+    bib.text.push_back(line);
     if (auto cite = ParseCitation(bib.path_spec, line, line_num); cite) {
       bib.items.push_back(*cite);
     }
   }
   while (getline(fin, line)) {
+    bib.text.push_back(line);
     line_num++;
     if (auto cite = ParseCitation(bib.path_spec, line, line_num); cite) {
       bib.items.push_back(*cite);
     }
   }
+
+
   return bib;
 }
 

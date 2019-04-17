@@ -15,13 +15,12 @@ using std::vector;
 
 namespace content {
 
-const char* const kDefaultHints = "[title]";
+const char* const kDefaultHints = "";
 
 const char* const kDefaultSpec = "1";
 
 const char* const kDefaultHeader =
-    "# spec: 1\n"
-    "# hints: [title]\n\n";
+    "# spec: 1\n";
 
 }  // namespace content
 
@@ -44,9 +43,12 @@ typedef vector<string> CitationHints;
 struct BibDataFileContent
 {
   string spec;
-  vector<string> headers;
   CitationHints path_spec;
+
   vector<Citation> items;
+
+  vector<string> headers;
+  vector<string> text;
 };
 
 typedef string Spec;
@@ -68,7 +70,7 @@ class BibDataFile
  public:
   explicit BibDataFile(const string& path);
   BibDataFileContent Parse() const;
-
+  void Save(const BibDataFileContent& content) const;
  private:
   string path_;
 };

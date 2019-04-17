@@ -88,7 +88,9 @@ class MultiLineSpinner
       cout.flush();
       clearPrevLines(lines_.size());
 
-      std::this_thread::sleep_for(std::chrono::milliseconds(interval_));
+      if (unfinished) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(interval_));
+      }
     }
     showCursor();
     pool.join();
