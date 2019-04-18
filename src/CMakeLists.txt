@@ -11,7 +11,7 @@ add_library(libwdbib
     commands/convert.cpp
 )
 target_link_libraries(libwdbib PRIVATE ssl crypto spdlog::spdlog CLI11::CLI11 nlohmann_json::nlohmann_json unofficial::abseil::strings ${Boost_LIBRARIES} fmt::fmt-header-only)
-target_include_directories(libwdbib PRIVATE ${Boost_INCLUDE_DIRS})
+target_include_directories(libwdbib PRIVATE ${Boost_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR})
 target_compile_features(libwdbib PUBLIC cxx_std_17)
 
 add_executable(wdbib main.cpp)

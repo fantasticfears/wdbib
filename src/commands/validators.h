@@ -1,4 +1,6 @@
 #pragma once
+#ifndef COMMANDS_VALIDATORS_H_
+#define COMMANDS_VALIDATORS_H_
 
 #include <string>
 
@@ -21,5 +23,6 @@ struct QIDValidator : public CLI::Validator
   }
 };
 
-
 }  // namespace wdbib
+
+#endif  // COMMANDS_VALIDATORS_H_

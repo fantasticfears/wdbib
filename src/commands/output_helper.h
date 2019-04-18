@@ -1,4 +1,6 @@
 #pragma once
+#ifndef COMMANDS_OUTPUT_HELPER_H_
+#define COMMANDS_OUTPUT_HELPER_H_
 
 #include <chrono>
 #include <functional>
@@ -120,3 +122,5 @@ class MultiLineSpinner
 // PrintHighlight()
 
 }  // namespace wdbib
+
+#endif  // COMMANDS_OUTPUT_HELPER_H_

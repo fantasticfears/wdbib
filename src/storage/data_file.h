@@ -1,4 +1,7 @@
 #pragma once
+#ifndef DATA_FILE_H_
+#define DATA_FILE_H_
+
 
 #include <fstream>
 #include <memory>
@@ -9,6 +12,8 @@
 #include <unordered_map>
 
 #include <nlohmann/json.hpp>
+
+#include "../wikicite.h"
 
 namespace wdbib {
 
@@ -134,3 +139,5 @@ class BibDataLockFile
 };
 
 }  // namespace wdbib
+
+#endif  // DATA_FILE_H_

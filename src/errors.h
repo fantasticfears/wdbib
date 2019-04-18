@@ -1,6 +1,7 @@
 #pragma once
+#ifndef ERRORS_H_
+#define ERRORS_H_
 
-#include <stdexcept>
 #include <string>
 
 namespace wdbib {
@@ -20,3 +21,5 @@ class InvalidSpecError : public std::runtime_error
 };
 
 }  // namespace wdbib
+
+#endif  // ERRORS_H_

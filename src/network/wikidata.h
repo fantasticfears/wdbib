@@ -1,18 +1,20 @@
 #pragma once
+#ifndef NETWORK_WIKIDATA_H_
+#define NETWORK_WIKIDATA_H_
 
 #include <string>
 #include <unordered_map>
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include <nlohmann/json.hpp>
 
 namespace wdbib {
 
+using nlohmann::json;
 using std::string;
 using std::unordered_map;
 using std::vector;
-using nlohmann::json;
 
 namespace wd {
 
@@ -58,3 +60,5 @@ string GetWikidataItems(const string& query_ids);
 string GetWikidataItems(const vector<string>& q_ids);
 
 }  // namespace wdbib
+
+#endif  // NETWORK_WIKIDATA_H_

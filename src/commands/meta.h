@@ -1,4 +1,6 @@
 #pragma once
+#ifndef COMMANDS_META_H_
+#define COMMANDS_META_H_
 
 #include <vector>
 #include <string>
@@ -41,3 +43,5 @@ void RunConvertSubCommand(const ConvertSubCmdOpt& opt);
 
 
 }  // namespace wdbib
+
+#endif  // COMMANDS_META_H_
