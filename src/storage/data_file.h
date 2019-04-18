@@ -2,50 +2,57 @@
 #ifndef DATA_FILE_H_
 #define DATA_FILE_H_
 
-
 #include <fstream>
 #include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
-#include <unordered_map>
 
-#include <nlohmann/json.hpp>
+#include <boost/core/noncopyable.hpp>
 
 #include "../wikicite.h"
 
 namespace wdbib {
 
-using std::optional;
-using std::string;
-using std::string_view;
-using std::vector;
-using std::unordered_map;
-
 // kDefaultDataFilename is the filename for storing uris
 const char* const kDefaultDataFilename = "citation";
 
-// kDefaultCachedDataFilename is the filename for storing cached wikidata information
+// kDefaultCachedDataFilename is the filename for storing cached wikidata
+// information
 const char* const kDefaultCachedDataFilename = "citation.lock";
+const char* const kDefaultCachedDataExtrension = "lock";
 
-namespace content {
+/*
+ * BibDataFile manages the data file and exposes streams to the user.
+ */
+class BibDataFile : private boost::noncopyable
+{
+ public:
+  BibDataFile(const std::string& filename, const std::string& lock_ext);
+  void Load(function<void(std::ifstream&)> spec,
+            function<void(std::ifstream&)> data);
+  void Save(function<void(std::ofstream&)> spec,
+            function<void(std::ofstream&)> data);
 
-const char* const kDefaultHints = "";
+ private:
+  std::string spec_filename_;
+  std::string data_filename_;
+};
 
-const char* const kDefaultSpec = "1";
-
-const char* const kDefaultHeader = "# spec: 1\n";
-
-}  // namespace content
-
-namespace file {
-
-string ReadAll(const string& path);
-void OverWrite(const string& path, const string& content);
-void Write(const string& path, const string& content);
-
-}  // namespace file
+struct ParsedSpecLine : private boost::noncopyable
+{
+  virtual std::string toString() = 0;
+};
+const char* const kLineHeaderPrefix = "# ";
+struct ParsedSpecHeader : public ParsedSpecLine
+{
+  virtual std::string toString() override = 0;
+};
+struct ParsedSpecBody : public ParsedSpecLine
+{
+  virtual std::string toString() override = 0;
+};
 
 struct Citation
 {
@@ -53,90 +60,76 @@ struct Citation
   vector<string> aux_info;
 };
 
-typedef vector<string> CitationHints;
-
-struct BibDataFileContent
-{
-  string spec;
-  CitationHints path_spec;
-
-  vector<Citation> items;
-
-  vector<string> headers;
-  vector<string> text;
+enum class HintType {
+  kArticle
 };
 
-typedef string Spec;
+enum class HintModifier {
+  kFirstWord
+};
 
-Spec TryParseSpecWithDefault(string_view spec_str, const string& default_str,
-                             int32_t line_num);
-CitationHints TryParseHintsWithDefault(string_view hints_str,
-                                       const string& default_str,
-                                       int32_t line_num);
-optional<Citation> ParseCitation(const CitationHints& hints,
-                                 string_view cite_str, int32_t line_num);
+struct Hints {
+  HintType type;
+  HintModifier modifier;
+};
 
-/*
- * BibDataFile manages the data file.
- * It's aware of semantics of file.
- */
-class BibDataFile
+struct SpecLine : private boost::noncopyable
+{
+  std::string data;
+  std::string_view content;
+  std::unique_ptr<ParsedSpecLine> parsed;
+};
+
+class ParsedSpecVersionHeader : public ParsedSpecHeader
 {
  public:
-  explicit BibDataFile(const string& path);
-  BibDataFileContent Parse() const;
-  void Save(const BibDataFileContent& content) const;
+  explicit ParsedSpecVersionHeader(int32_t version) : version_(version) {}
+  virtual std::string toString() override;
 
  private:
-  string path_;
+  int32_t version_;
 };
 
-using nlohmann::json;
-
-class BibDataLockFile
+class ParsedSpecHintsHeader : public ParsedSpecHeader
 {
  public:
-  explicit BibDataLockFile(const string& path) : path_(path)
-  {
-    std::ifstream i(path_);
-    try {
-    data_ = json::parse(i);
-    } catch (...) {
-      data_ = json();
-    }
-  }
-  void update(const string& resp)
-  {
-    auto r = json::parse(resp);
-    for (auto& [key, value] : r.at("entities").items()) {
-      data_[key] = value;
-    }
-  }
-
-  unordered_map<string, json> All() const
-  {
-    unordered_map<string, json> res;
-    for (auto& [key, value] : data_.items()) {
-      res[key] = value;
-    }
-    return res;
-  }
-
-  bool Found(const string& qid)
-  {
-    return data_.find(qid) != data_.end();
-  }
-
-  void Save()
-  {
-    std::ofstream f(path_, std::ios::out | std::ios::trunc);
-    f << data_.dump() << std::endl;
-  }
+  explicit ParsedSpecHintsHeader(const std::vector<Hints>& hints)
+      : hints_(hints)
+  {}
+  explicit ParsedSpecHintsHeader(std::vector<Hints> hints)
+      : hints_(std::move(hints))
+  {}
+  virtual std::string toString() override;
 
  private:
-  string path_;
-  json data_;
+  std::vector<Hints> hints_;
 };
+
+class ParsedSpecLineBody : public ParsedSpecBody
+{
+ public:
+  virtual std::string toString() override;
+}
+
+class ParsedSpecCitationBody : public ParsedSpecBody
+{
+ public:
+  explicit ParsedSpecCitationBody(const Citation& item) : item_(item) {}
+  explicit ParsedSpecCitationBody(Citation item) : item_(std::move(item)) {}
+  virtual std::string toString() override;
+
+ private:
+  Citation item_;
+};
+
+class WdbibFileContent;
+
+namespace file {
+
+WdbibFileContent LoadWdbibData(const BibDataFile& file);
+void SaveWdbibData(const BibDataFile& file, const WdbibFileContent& content);
+
+}  // namespace file
 
 }  // namespace wdbib
 

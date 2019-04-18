@@ -4,179 +4,120 @@
 #include <iostream>
 #include <utility>
 
-#include <absl/strings/ascii.h>
-#include <absl/strings/match.h>
-#include <absl/strings/numbers.h>
-#include <absl/strings/str_cat.h>
-#include <absl/strings/str_split.h>
-
-#include "../errors.h"
+#include "../wdbib_data.h"
+#include "spec_stateful_parser.h"
 
 namespace wdbib {
 
 using namespace std;
 
+BibDataFile::BibDataFile(const string& filename, const string& lock_ext)
+    : spec_filename_(filename),
+      data_filename_(absl::StrCat(filename, '.' lock_ext))
+{}
+
+void BibDataFile::Load(function<void(ifstream&)> spec,
+                       function<void(ifstream&)> data)
+{
+  ifstream sf(spec_filename_);
+  spec(sf);
+  ifstream df(data_filename_);
+  data(df);
+}
+
+void BibDataFile::Save(function<void(ofstream&)> spec,
+                       function<void(ofstream&)> data)
+{
+  ofstream sf(spec_filename_);
+  spec(sf);
+  ofstream df(data_filename_);
+  data(df);
+}
+
 namespace file {
 
-const int kFileEndOffset = 0;
-const int kFileStartOffset = 0;
-
-string ReadAll(const string& path)
+WdbibFileContent LoadWdbibData(const BibDataFile& file)
 {
-  ifstream fs(path);
-  fs.seekg(kFileEndOffset, ios::end);
-  auto size = fs.tellg();
-  string buffer(size, ' ');
-  fs.seekg(kFileStartOffset);
-  fs.read(&buffer[0], size);
-  return buffer;
+  WdbibFileContent content;
+
+  SpecStatefulParser spec_parser(&content.spec);
+  file.Load(
+      [&](ifstream& f) {
+        string line;
+        while (getline(line, f)) {
+          spec_parser.Next(line);
+        }
+      },
+      [&](ifstream& f) {
+        json d;
+        try {
+          d = json::parse(f);
+        } catch (...) {
+          d = json();
+        }
+        content.data.Load(d);
+      });
+  return std::move(content);
 }
 
-void OverWrite(const string& path, const string& content)
+void SaveWdbibData(const BibDataFile& file, const WdbibFileContent& content)
 {
-  ofstream fs(path, ofstream::out | ofstream::trunc);
-  fs.write(content.c_str(), content.size());
-}
+  const auto& spec = content.spec;
+  const auto& data = content.data;
 
-void Write(const string& path, const string& content)
-{
-  ofstream fs(path, ofstream::out);
-  fs.write(content.c_str(), content.size());
+  file.Save(
+      [&](ofstream& f) {
+        for (const auto& line : spec) {
+          f << line;
+        }
+      },
+      [&](ofstream& f) { f << data.Dump(); });
 }
 
 }  // namespace file
 
-const char* const kHeaderPrefix = "# ";
-const char* const kHeaderSpecKey = "spec";
-const char* const kHeaderHintsKey = "hints";
-const char kPathSpecDelimiter = ':';
-const auto kNumExtraCharAfterKey = 1;
-
-Spec TryParseSpecWithDefault(string_view spec_str, const string& default_str,
-                             int32_t line_num)
+string ParsedSpecVersionHeader::toString() override
 {
-  if (spec_str.empty()) {
-    spec_str = default_str;
-  }
-  spec_str = absl::StripAsciiWhitespace(spec_str);
-  int32_t num = 1;
-  if (spec_str.empty() || !absl::SimpleAtoi(spec_str, &num)) {
-    throw ParsingError(
-        absl::StrCat("incorrect spec version at line ", line_num));
-  }
-  if (num != 1) {
-    throw InvalidSpecError("invalid spec version. 1 is supported.");
-  }
-  return string(spec_str);
+  return absl::StrCat(version_);
 }
 
-CitationHints TryParseHintsWithDefault(string_view hints_str,
-                                       const string& default_str,
-                                       int32_t line_num)
+struct HintsFormatter
 {
-  if (hints_str.empty()) {
-    hints_str = default_str;
-  }
-  CitationHints hints;
-  for (auto s : absl::StrSplit(absl::StripAsciiWhitespace(hints_str), ':')) {
-    if (s.empty() || s.front() != '[' || s.back() != ']') {
-      throw ParsingError(absl::StrCat("incorrect hints at line ", line_num));
+  void operator()(std::string* out, const Hints& hint) const
+  {
+    switch (hint.type) {
+    case HintType::kArticle:
+
+      StrAppend(out, "article");
+      break;
+    default:
+      break;
     }
-    s.remove_prefix(1);
-    s.remove_suffix(1);
-    hints.push_back(string(s));
-  }
+    switch (hint.modifier) {
+    case HintModifier::kFirstWord:
+      StrAppend(out, kHeaderHintModifierDelimiter, "first word");
+      break;
 
-  return hints;
-}
-
-optional<Citation> ParseCitation(const CitationHints& hints,
-                                 string_view cite_str, int32_t line_num)
-{
-  if (cite_str.empty()) {
-    return {};
-  }
-
-  vector<string> parts = absl::StrSplit(cite_str, kPathSpecDelimiter);
-  if (parts.size() < 2 || parts[0] != "wc" ||
-      !absl::StartsWith(parts[1], "Q")) {
-    throw ParsingError(
-        absl::StrCat("incorrect citation item at line ", line_num));
-  }
-
-  Citation cite{parts[1]};
-  int i = 2;
-  for (const auto& com : hints) {
-    if (i < parts.size()) {
-      cite.aux_info.push_back(parts[i]);
-    } else {
-      cite.aux_info.push_back("");
-    }
-  }
-  return {cite};
-}
-
-BibDataFile::BibDataFile(const string& path) : path_(path) {}
-
-void BibDataFile::Save(const BibDataFileContent& content) const
-{
-  ofstream fout(path_);
-  for (const auto& h : content.headers) {
-    fout << h << endl;
-  }
-  for (const auto& c : content.text) {
-    fout << c << endl;
-  }
-}
-
-BibDataFileContent BibDataFile::Parse() const
-{
-  ifstream fin(path_);
-  string line;
-  int32_t line_num = 0;
-  BibDataFileContent bib;
-  bool break_header = false;
-  while (getline(fin, line)) {
-    line_num++;
-    if (absl::StartsWith(line, kHeaderPrefix)) {
-      pair<string, string> p = absl::StrSplit(line, '#');
-      auto s = absl::StripLeadingAsciiWhitespace(p.second);
-      if (absl::StartsWith(s, kHeaderSpecKey)) {
-        s.remove_prefix(strlen(kHeaderSpecKey) + kNumExtraCharAfterKey);
-        bib.spec = TryParseSpecWithDefault(s, content::kDefaultSpec, line_num);
-      } else if (absl::StartsWith(s, "hints")) {
-        s.remove_prefix(strlen(kHeaderHintsKey) + kNumExtraCharAfterKey);
-        bib.path_spec =
-            TryParseHintsWithDefault(s, content::kDefaultHints, line_num);
-      }
-
-      bib.headers.push_back(line);
-    } else {
-      break_header = true;
+    default:
       break;
     }
   }
-  if (bib.headers.empty()) {
-    bib.headers.push_back(content::kDefaultHeader);
+};
+
+string ParsedSpecHintsHeader::toString() override
+{
+  return absl::StrJoin(hints_, kHeaderHintsDelimiter, HintsFormatter());
+}
+
+string ParsedSpecLineBody::toString() override { return {}; }
+
+string ParsedSpecCitationBody::toString() override
+{
+  if (!item_.aux_info.empty()) {
+    return absl::StrCat(item_.qid, kPathDelimiter, absl::StrJoin(item_.aux_info, kPathDelimiter));
+  } else {
+    return item_.qid;
   }
-
-
-  if (break_header) {
-    bib.text.push_back(line);
-    if (auto cite = ParseCitation(bib.path_spec, line, line_num); cite) {
-      bib.items.push_back(*cite);
-    }
-  }
-  while (getline(fin, line)) {
-    bib.text.push_back(line);
-    line_num++;
-    if (auto cite = ParseCitation(bib.path_spec, line, line_num); cite) {
-      bib.items.push_back(*cite);
-    }
-  }
-
-
-  return bib;
 }
 
 }  // namespace wdbib
