@@ -16,7 +16,7 @@ class ParsedSpecLine;
 
 class SpecStatefulParser : private boost::noncopyable {
 public:
-  SpecStatefulParser(const SpecFileContent* content);
+  explicit SpecStatefulParser() {}
   void Next(std::string line);
 
   std::string_view probeState(const std::string& line);
@@ -32,7 +32,6 @@ private:
     kHeader,
     kBody
   } status_;
-  SpecFileContent* content_;
 
   int64_t line_num_ = 0;
   int32_t prefix_size_;

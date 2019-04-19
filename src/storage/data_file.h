@@ -43,15 +43,18 @@ class BibDataFile : private boost::noncopyable
 struct ParsedSpecLine : private boost::noncopyable
 {
   virtual std::string toString() = 0;
+  virtual void PopulateSpecContent(SpecFileContent* content) = 0;
 };
 const char* const kLineHeaderPrefix = "# ";
 struct ParsedSpecHeader : public ParsedSpecLine
 {
   virtual std::string toString() override = 0;
+  virtual void PopulateSpecContent(SpecFileContent* content) = 0;
 };
 struct ParsedSpecBody : public ParsedSpecLine
 {
   virtual std::string toString() override = 0;
+  virtual void PopulateSpecContent(SpecFileContent* content) = 0;
 };
 
 struct Citation
@@ -60,15 +63,18 @@ struct Citation
   vector<string> aux_info;
 };
 
-enum class HintType {
+enum class HintType
+{
   kArticle
 };
 
-enum class HintModifier {
+enum class HintModifier
+{
   kFirstWord
 };
 
-struct Hints {
+struct Hints
+{
   HintType type;
   HintModifier modifier;
 };
@@ -85,6 +91,7 @@ class ParsedSpecVersionHeader : public ParsedSpecHeader
  public:
   explicit ParsedSpecVersionHeader(int32_t version) : version_(version) {}
   virtual std::string toString() override;
+  virtual void PopulateSpecContent(SpecFileContent* content) override;
 
  private:
   int32_t version_;
@@ -100,6 +107,7 @@ class ParsedSpecHintsHeader : public ParsedSpecHeader
       : hints_(std::move(hints))
   {}
   virtual std::string toString() override;
+  virtual void PopulateSpecContent(SpecFileContent* content) override;
 
  private:
   std::vector<Hints> hints_;
@@ -108,7 +116,9 @@ class ParsedSpecHintsHeader : public ParsedSpecHeader
 class ParsedSpecLineBody : public ParsedSpecBody
 {
  public:
-  virtual std::string toString() override;
+  virtual std::string toString() override { return {}; }
+  virtual void PopulateSpecContent(SpecFileContent* content) override {}
+
 }
 
 class ParsedSpecCitationBody : public ParsedSpecBody
@@ -117,6 +127,7 @@ class ParsedSpecCitationBody : public ParsedSpecBody
   explicit ParsedSpecCitationBody(const Citation& item) : item_(item) {}
   explicit ParsedSpecCitationBody(Citation item) : item_(std::move(item)) {}
   virtual std::string toString() override;
+  virtual void PopulateSpecContent(SpecFileContent* content) override;
 
  private:
   Citation item_;

@@ -9,7 +9,6 @@ namespace wdbib {
 
 using namespace std;
 
-
 enum class WikiCiteItemType
 {
   kArticle,

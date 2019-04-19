@@ -30,7 +30,7 @@ void BibDataFile::Save(function<void(ofstream&)> spec,
 {
   ofstream sf(spec_filename_);
   spec(sf);
-  ofstream df(data_filename_);
+  ofstream df(data_filename_, std::ios::out | std::ios::trunc);
   data(df);
 }
 
@@ -87,7 +87,6 @@ struct HintsFormatter
   {
     switch (hint.type) {
     case HintType::kArticle:
-
       StrAppend(out, "article");
       break;
     default:
@@ -109,15 +108,32 @@ string ParsedSpecHintsHeader::toString() override
   return absl::StrJoin(hints_, kHeaderHintsDelimiter, HintsFormatter());
 }
 
-string ParsedSpecLineBody::toString() override { return {}; }
-
 string ParsedSpecCitationBody::toString() override
 {
   if (!item_.aux_info.empty()) {
-    return absl::StrCat(item_.qid, kPathDelimiter, absl::StrJoin(item_.aux_info, kPathDelimiter));
+    return absl::StrCat(item_.qid, kPathDelimiter,
+                        absl::StrJoin(item_.aux_info, kPathDelimiter));
   } else {
     return item_.qid;
   }
+}
+
+void ParsedSpecVersionHeader::PopulateSpecContent(
+    SpecFileContent* content) override
+{
+  content->set_version(&version_);
+}
+
+void ParsedSpecHintsHeader::PopulateSpecContent(
+    SpecFileContent* content) override
+{
+  content->set_hints(&hints_);
+}
+
+void ParsedSpecCitationBody::PopulateSpecContent(
+    SpecFileContent* content) override
+{
+  content.appendCitation(item_.qid);
 }
 
 }  // namespace wdbib

@@ -16,8 +16,6 @@ namespace wdbib {
 
 using namespace std;
 
-SpecStatefulParser::SpecStatefulParser(const SpecFileContent* content) : content_(content) {}
- 
 const char* const kHeaderPrefix = "#";
 const char* const kHeaderPrefix2 = "# ";
 const auto kLenHeaderPrefix = 1;
@@ -99,6 +97,7 @@ unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeaderVersion(string_view con
   if (ver != 1) {
     throw InvalidSpecError("invalid version. 1 is supported.");
   }
+  
   return make_unique<ParsedSpecVersionHeader>(ver);
 }
 

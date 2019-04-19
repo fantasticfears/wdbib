@@ -1,43 +1,45 @@
+#include "wdbib_data.h"
 
+namespace wdbib {
 
-class BibDataLockFile
+void SpecFileContent::appendCitation(const string& qid)
 {
- public:
-  explicit BibDataLockFile(const string& path) : path_(path)
-  {
-    std::ifstream i(path_);
-    try {
-      data_ = json::parse(i);
-    } catch (...) {
-      data_ = json();
-    }
-  }
-  void update(const string& resp)
-  {
-    auto r = json::parse(resp);
-    for (auto& [key, value] : r.at("entities").items()) {
-      data_[key] = value;
-    }
-  }
+  unordered_map[qid] = spec_lines.size() - 1;
+}
 
-  unordered_map<string, json> All() const
-  {
-    unordered_map<string, json> res;
-    for (auto& [key, value] : data_.items()) {
-      res[key] = value;
-    }
-    return res;
+void SpecFileContent::Append(const SpecLine& line)
+{
+  spec_lines_.push_back(line);
+  lines_removed_.push_back(false);
+  auto parsed = *spec_lines.back().parsed;
+  parsed->PopulateSpecContent(this);
+}
+
+std::optional<SpecLine*> SpecFileContent::Line(size_t line) const
+{
+  if (line < spec_lines_.size() && !lines_removed_[line]) {
+    return &spec_lines[line];
+  } else {
+    return {};
   }
+}
 
-  bool Found(const string& qid) { return data_.find(qid) != data_.end(); }
-
-  void Save()
-  {
-    std::ofstream f(path_, std::ios::out | std::ios::trunc);
-    f << data_.dump() << std::endl;
+void SpecFileContent::RemoveLine(size_t line)
+{
+  if (line < lines_removed_.size()) {
+    lines_removed_[line] = true;
   }
+}
 
- private:
-  string path_;
-  json data_;
-};
+void DataFileContent::Load(const nlohmann::json& data)
+{
+  data_ = data;
+}
+
+string DataFileContent::Dump() const
+{
+  return data_.dump();
+}
+
+
+}  // namespace wdbib
