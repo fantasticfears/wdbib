@@ -4,7 +4,9 @@ namespace wdbib {
 
 void SpecFileContent::appendCitation(const string& qid)
 {
-  unordered_map[qid] = spec_lines.size() - 1;
+  auto ln = spec_lines.size() - 1;
+  unordered_map[qid] = ln;
+  citation_line_.push_back(ln);
 }
 
 void SpecFileContent::Append(const SpecLine& line)
@@ -13,6 +15,26 @@ void SpecFileContent::Append(const SpecLine& line)
   lines_removed_.push_back(false);
   auto parsed = *spec_lines.back().parsed;
   parsed->PopulateSpecContent(this);
+}
+
+bool SpecFileContent::Found(const string& qid) const { return loaded_citation_.find(qid) != loaded_citation_.end(); };
+
+std::vector<std::string> SpecFileContent::QIDs() const
+{
+  vector<size_t> qid_spec_line_idx;
+
+  for (const auto& [qid, idx] : loaded_citation_) {
+    if (!lines_removed_[idx]) {
+      qid_spec_line_idx.push_back(idx);
+    }
+  }
+  
+  vector<string> res;
+  for (auto idx : qid_spec_line_idx) {
+    ParsedSpecCitationBody* b = spec_lines_[idx].parsed;
+    res.push_back(b->qid);
+  }
+  return res;
 }
 
 std::optional<SpecLine*> SpecFileContent::Line(size_t line) const

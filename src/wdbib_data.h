@@ -22,6 +22,8 @@ class SpecFileContent : private boost::noncopyable
   void Append(const SpecLine& line);
   std::optional<SpecLine*> Line(size_t line) const;
   void RemoveLine(size_t line);
+  bool Found(const string& qid) const;
+  std::vector<std::string> QIDs() const;
 
   int32_t version() const { return verion_; }
   void set_version(int32_t* version) { version_ = version; }
@@ -46,7 +48,7 @@ class DataFileContent : private boost::noncopyable
   explicit DataFileContent() {}
   void Load(const nlohmann::json& data);
   std::string Dump() const;
-  void update(const nlohmann::json& resp);
+  void Update(const nlohmann::json& resp);
   std::unordered_map<std::string, json> All() const
   {
     auto r = json::parse(resp);

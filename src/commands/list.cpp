@@ -27,10 +27,10 @@ void RunListSubCommand()
 
   BibDataFile bib(kDefaultDataFilename);
   BibDataLockFile lock(kDefaultCachedDataFilename);
+  auto content = file::LoadWdbibData(bib);
 
-  auto c = bib.Parse();
-  for (const auto& item : c.items) {
-    auto status = lock.Found(item.qid) ? "cached" : "local";
+  for (const auto& qid : content.spec.QIDs()) {
+    auto status = content.data.Found(qid) ? "cached" : "local";
     if (status == kLocalStatus) {
       cout << '[' << rang::fg::red << kLocalStatus << rang::fg::reset << "] ";
     } else {

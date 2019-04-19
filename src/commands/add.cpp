@@ -44,17 +44,12 @@ void RunAddSubCommand(const AddSubCmdOpt& opt)
   auto pool_size = std::max(opt.qids.size(), kMaxThreadPoolSize);
   spinners::MultiLineSpinner spinner(pool_size);
   BibDataFile bib(kDefaultDataFilename);
-  auto c = bib.Parse();
-
-  unordered_set<string> stored_qids;
-  for (const auto& i : c.items) {
-    stored_qids.insert(i.qid);
-  }
+  auto data = file::LoadWdbibData(bib);
 
   vector<optional<CitationResult>> cites(opt.qids.size(), nullopt);
   int i = 0;
   for (const auto& qid : opt.qids) {
-    if (stored_qids.find(qid) == stored_qids.end()) {
+    if (!data.spec.Found(qid)) {
       spinner.register_append(
           {spinners::SpinnerStatus::kPending, absl::StrCat("Adding ", qid, "..."),
           absl::StrCat("Adding ", qid, " done"),
@@ -75,19 +70,13 @@ void RunAddSubCommand(const AddSubCmdOpt& opt)
     i++;
   }
   spinner.LoopSpinner();
-  BibDataLockFile cached(kDefaultCachedDataFilename);
   for (const auto& cite : cites) {
     if (cite) {
-      c.items.push_back(cite->first);
-
-      string repr = absl::StrCat("wc:", cite->first.qid);
-      absl::StrAppend(&repr, ":", absl::StrJoin(cite->first.aux_info, ":"));
-      c.text.push_back(repr);
-      cached.update(cite->second);
+      data.spec.Append(MakeSpecLine(cite->first));
+      data.data.Update(cite->second);
     }
   }
-  bib.Save(c);
-  cached.Save();
+  file::SaveWdbibData(bib, data);
 }
 
 }  // namespace wdbib

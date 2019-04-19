@@ -8,16 +8,10 @@ namespace wdbib {
 void runSyncSubCommand()
 {
   BibDataFile bib(kDefaultDataFilename);
-  BibDataLockFile lock(kDefaultCachedDataFilename);
+  auto content = file::LoadWdbibData(bib);
 
-  auto c = bib.Parse();
-  vector<string> qids;
-  qids.reserve(c.items.size());
-  for (const auto& item : c.items) {
-    qids.push_back(item.qid);
-  }
-  lock.update(GetWikidataItems(qids));
-  lock.Save();
+  content.data.Update(GetWikidataItems(content.spec.QIDs()));
+  file::SaveWdbibData(bib, content);
 }
 
 void SetupSyncSubCommand(CLI::App& app)

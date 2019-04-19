@@ -44,6 +44,11 @@ void BibDataFile::SaveData(function<void(std::ofstream&)> data)
   data(df);
 }
 
+SpecLine MakeSpecLine(const Citation& item)
+{
+  return {"", "", make_unique<ParsedSpecCitationBody>(item)};
+}
+
 namespace file {
 
 WdbibFileContent LoadWdbibData(const BibDataFile& file)

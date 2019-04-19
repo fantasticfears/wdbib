@@ -135,6 +135,8 @@ class ParsedSpecCitationBody : public ParsedSpecBody
   Citation item_;
 };
 
+SpecLine MakeSpecLine(const Citation& item);
+
 class WdbibFileContent;
 
 namespace file {
