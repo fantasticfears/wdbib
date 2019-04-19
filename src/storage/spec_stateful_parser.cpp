@@ -10,6 +10,7 @@
 #include <fmt/format.h>
 
 #include "../errors.h"
+#include "../wdbib_data.h"
 #include "data_file.h"
 
 namespace wdbib {
@@ -27,18 +28,18 @@ string_view SpecStatefulParser::probeState(const string& line)
   prefix_size_ = kLenHeaderPrefix;
   if (status_ == ParserStatus::kStart) {
     if (lstriped.empty()) {
-      status = ParserStatus::kBody;
+      status_ = ParserStatus::kBody;
     } else if (absl::StartsWith(lstriped, kHeaderPrefix)) {
-      status = ParserStatus::kHeader;
+      status_ = ParserStatus::kHeader;
     } else if (absl::StartsWith(lstriped, kHeaderPrefix2)) {
-            status = ParserStatus::kHeader;
+            status_ = ParserStatus::kHeader;
       prefix_size_ = kLenHeaderPrefix2;
     }
   } else if (status_ == ParserStatus::kHeader) {
     if (lstriped.empty()) {
-      status = ParserStatus::kBody;
+      status_ = ParserStatus::kBody;
     } else if (!absl::StartsWith(lstriped, kHeaderPrefix)) {
-      status = ParserStatus::kBody;
+      status_ = ParserStatus::kBody;
     }
     if (absl::StartsWith(lstriped, kHeaderPrefix2)) {
       prefix_size_ = kLenHeaderPrefix2;
@@ -58,13 +59,13 @@ void SpecStatefulParser::Next(string line)
   auto content = probeState(line);
   switch (status_) {
   case ParserStatus::kHeader:
-    content_->Append({ line, content, nextHeader(content) });
+    spec_->Append(make_unique<SpecLine>(line, content, nextHeader(content)));
     break;
   case ParserStatus::kBody:
-    content_->Append({ line, content, nextBody(content) });
+    spec_->Append(make_unique<SpecLine>(line, content, nextBody(content)));
     break;
   default:
-    throw ParsingError(fmt::format("invalid internal state at line {}", line_num));
+    throw ParsingError(fmt::format("invalid internal state at line {}", line_num_));
   }
 }
 
@@ -76,14 +77,14 @@ unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeader(string_view content)
 {
   pair<string, string> p = absl::StrSplit(content, kHeaderDelimiter);
 
-  auto key = absl::StripLeadingAsciiWhitespace(p.first)
+  auto key = absl::StripLeadingAsciiWhitespace(p.first);
   auto value = absl::StripLeadingAsciiWhitespace(p.second);
   if (key == kHeaderVersionKey) {
     return nextHeaderVersion(value);
   } else if (key == kHeaderHintsKey) {
     return nextHeaderHints(value);
   } else {
-    throw ParseError(fmt::format("invalid key items {} at line {}", key, line_num_));
+    throw ParsingError(fmt::format("invalid key items {} at line {}", key, line_num_));
   }
 }
 
@@ -101,36 +102,35 @@ unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeaderVersion(string_view con
   return make_unique<ParsedSpecVersionHeader>(ver);
 }
 
-const char kHeaderHintsDelimiter = '|'; 
-const char kHeaderHintModifierDelimiter = '/'; 
-
 unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeaderHints(string_view content)
 {
   if (content.empty()) {
     throw ParsingError(fmt::format("parseing header error on hints at line ", line_num_));
   }
   
-  vector<Hints> hints;
-  for (auto s : absl::StrSplit(content, kHeaderHintsDelimiter)) {
+  vector<Hint> hints;
+  for (auto s : absl::StrSplit(content, gkHeaderHintsDelimiter)) {
     if (s.empty() || s.front() != '[' || s.back() != ']') {
       throw ParsingError(absl::StrCat("incorrect hints at line ", line_num_));
     }
     s.remove_prefix(1);
     s.remove_suffix(1);
-    pair<string, string> h = absl::StrSplit(s, kHeaderHintModifierDelimiter);
+    pair<string, string> h = absl::StrSplit(s, gkHeaderHintModifierDelimiter);
     HintType type;
     if (h.first == "article") {
       type = HintType::kArticle;
     } else {
       throw InvalidSpecError(fmt::format("invalid hint type {} at line {}", h.first, line_num_));
     }
-    HintModifier modifier;
+    HintModifier modifier = HintModifier::kNothing;
     if (h.second == "first word") {
       modifier = HintModifier::kFirstWord;
     }
     hints.push_back({ type, modifier });
   }
-  return make_unique<ParsedSpecHintsHeader>(hints);
+  auto res = make_unique<ParsedSpecHintsHeader>(std::move(hints));
+  hints_ = res.get()->hints();
+  return res;
 }
 
 unique_ptr<ParsedSpecLine> SpecStatefulParser::nextBody(string_view content)
@@ -147,22 +147,24 @@ unique_ptr<ParsedSpecLine> SpecStatefulParser::nextBodyLine()
   return make_unique<ParsedSpecLineBody>();
 }
 
-const char kPathDelimiter = ':';
 
 unique_ptr<ParsedSpecLine> SpecStatefulParser::nextBodyCitation(string_view content)
 {
-  vector<string> parts = absl::StrSplit(content, kPathDelimiter);
+  vector<string> parts = absl::StrSplit(content, gkPathDelimiter);
   if (parts.empty() || !absl::StartsWith(parts.front(), "Q")) {
     throw ParsingError(
         absl::StrCat("incorrect citation item at line ", line_num_));
   }
 
-  Citation cite{parts.front()};
-  for (auto iter = next(hints.cbegin()); iter != hints.cend(); ++iter) {
-    cite.aux_info.push_back(*iter);
+  Citation cite{parts.front(), {}};
+  if (hints_ != nullptr) {
+    size_t i = 1;
+    for (auto iter = hints_->cbegin(); iter != hints_->cend(); ++iter) {
+      cite.aux_info.push_back(i < parts.size() ? parts[i] : "");
+    }
   }
 
-  return make_unique<ParsedSpecCitationBody>(cite);
+  return make_unique<ParsedSpecCitationBody>(std::move(cite));
 }
 
 }  // namespace wdbib

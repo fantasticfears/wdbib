@@ -13,6 +13,7 @@
 
 #include "../network/wikidata.h"
 #include "../storage/data_file.h"
+#include "../wdbib_data.h"
 #include "output_helper.h"
 
 namespace wdbib {
@@ -29,11 +30,10 @@ void SetupAddSubCommand(CLI::App& app)
 }
 
 typedef pair<Citation, string> CitationResult;
-optional<CitationResult> requestCitationFromQID(const string& qid,
-                                          const CitationHints& hints)
+optional<CitationResult> requestCitationFromQID(const string& qid)
 {
   auto item = GetWikiciteItem(qid);
-  Citation cite{item.first.id};
+  Citation cite{item.first.id, {}};
   return {make_pair(cite, item.second)};
 }
 
@@ -43,28 +43,25 @@ void RunAddSubCommand(const AddSubCmdOpt& opt)
 {
   auto pool_size = std::max(opt.qids.size(), kMaxThreadPoolSize);
   spinners::MultiLineSpinner spinner(pool_size);
-  BibDataFile bib(kDefaultDataFilename);
-  auto data = file::LoadWdbibData(bib);
+  BibDataFile bib(kDefaultDataFilename, kDefaultCachedDataExtrension);
+  auto content = file::LoadWdbibData(bib);
 
   vector<optional<CitationResult>> cites(opt.qids.size(), nullopt);
   int i = 0;
   for (const auto& qid : opt.qids) {
-    if (!data.spec.Found(qid)) {
-      spinner.register_append(
-          {spinners::SpinnerStatus::kPending, absl::StrCat("Adding ", qid, "..."),
-          absl::StrCat("Adding ", qid, " done"),
-          [&, i]() {
-            try {
-              cites[i] = requestCitationFromQID(qid, c.path_spec);
-            } catch (...) {
-
-            }
-               }});
+    if (!content->spec.Found(qid)) {
+      spinner.register_append({spinners::SpinnerStatus::kPending,
+                               absl::StrCat("Adding ", qid, "..."),
+                               absl::StrCat("Adding ", qid, " done"), [&, i]() {
+                                 try {
+                                   cites[i] =
+                                       requestCitationFromQID(qid);
+                                 } catch (...) {
+                                 }
+                               }});
     } else {
-      spinner.register_append(
-        {spinners::SpinnerStatus::kFinished, "",
-         absl::StrCat("Found ", qid),
-         []() {  }});
+      spinner.register_append({spinners::SpinnerStatus::kFinished, "",
+                               absl::StrCat("Found ", qid), []() {}});
     }
 
     i++;
@@ -72,11 +69,11 @@ void RunAddSubCommand(const AddSubCmdOpt& opt)
   spinner.LoopSpinner();
   for (const auto& cite : cites) {
     if (cite) {
-      data.spec.Append(MakeSpecLine(cite->first));
-      data.data.Update(cite->second);
+      content->spec.Append(MakeSpecLine(cite->first));
+      content->data.Update(cite->second);
     }
   }
-  file::SaveWdbibData(bib, data);
+  file::SaveWdbibData(bib, content.get());
 }
 
 }  // namespace wdbib

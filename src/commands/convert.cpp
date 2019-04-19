@@ -4,6 +4,7 @@
 
 #include "../storage/data_file.h"
 #include "../wikicite.h"
+#include "../wdbib_data.h"
 
 namespace wdbib {
 
@@ -21,11 +22,11 @@ void SetupConvertSubCommand(CLI::App& app)
 
 void RunConvertSubCommand(const ConvertSubCmdOpt& opt)
 {
-  BibDataFile bib(kDefaultDataFilename);
+  BibDataFile bib(kDefaultDataFilename, kDefaultCachedDataExtrension);
   auto content = file::LoadWdbibData(bib);
 
-  auto qids = content.spec.QIDs();
-  auto items = content.data.All();
+  auto qids = content->spec.QIDs();
+  auto items = content->data.All();
 
   ofstream out(opt.output_path, ios::out | ios::trunc);
   for (const auto& qid : qids) {
@@ -34,7 +35,7 @@ void RunConvertSubCommand(const ConvertSubCmdOpt& opt)
       continue;
     }
 
-   output << JsonToBibTex(*j);
+   out << JsonToBibTex(*j, content.get());
   }
 }
 

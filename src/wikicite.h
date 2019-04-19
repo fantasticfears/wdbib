@@ -10,6 +10,7 @@
 namespace wdbib {
 
 using namespace std;
+using json = nlohmann::json;
 
 namespace wd {
 
@@ -71,12 +72,10 @@ enum class WikidataProperty
   kPMID,
   kPMCID,
   kURL,
-  kISBN,
   kNnumberOfPages,
   kContainerTitle,
-  kTitle,
-  kAuthor
-}
+  kTitle
+};
 
 struct WikiCiteItem
 {
@@ -86,7 +85,8 @@ struct WikiCiteItem
   string subject;
 };
 
-std::string JsonToBibTex(const nlohmann::json& j);
+struct WdbibFileContent;
+std::string JsonToBibTex(const nlohmann::json& j, const WdbibFileContent* content);
 WikiCiteItem WikidataToWikicite(const wd::WikidataItem& item);
 
 }  // namespace wdbib

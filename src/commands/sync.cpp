@@ -2,16 +2,17 @@
 
 #include "../network/wikidata.h"
 #include "../storage/data_file.h"
+#include "../wdbib_data.h"
 
 namespace wdbib {
 
 void runSyncSubCommand()
 {
-  BibDataFile bib(kDefaultDataFilename);
+  BibDataFile bib(kDefaultDataFilename, kDefaultCachedDataExtrension);
   auto content = file::LoadWdbibData(bib);
 
-  content.data.Update(GetWikidataItems(content.spec.QIDs()));
-  file::SaveWdbibData(bib, content);
+  content->data.Update(GetWikidataItems(content->spec.QIDs()));
+  file::SaveWdbibData(bib, content.get());
 }
 
 void SetupSyncSubCommand(CLI::App& app)

@@ -10,6 +10,7 @@
 #include "spdlog/spdlog.h"
 
 #include "../system.h"
+#include "../wikicite.h"
 
 namespace wdbib {
 

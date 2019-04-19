@@ -24,4 +24,6 @@ if (${FORCE_COLORED_OUTPUT})
     endif ()
 endif ()
 
+add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-unused-variable -Wno-unused-parameter)
+
 add_subdirectory(src)

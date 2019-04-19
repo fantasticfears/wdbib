@@ -3,6 +3,10 @@
 #include <fstream>
 #include <iostream>
 #include <utility>
+#include <memory>
+
+#include <absl/strings/str_cat.h>
+#include <absl/strings/str_join.h>
 
 #include "../wdbib_data.h"
 #include "spec_stateful_parser.h"
@@ -13,7 +17,7 @@ using namespace std;
 
 BibDataFile::BibDataFile(const string& filename, const string& lock_ext)
     : spec_filename_(filename),
-      data_filename_(absl::StrCat(filename, '.' lock_ext))
+      data_filename_(absl::StrCat(filename, ".", lock_ext))
 {}
 
 void BibDataFile::LoadAll(function<void(ifstream&)> spec,
@@ -35,42 +39,40 @@ void BibDataFile::LoadData(function<void(std::ifstream&)> data) const
 }
 
 void BibDataFile::SaveAll(function<void(ofstream&)> spec,
-                          function<void(ofstream&)> data)
+                          function<void(ofstream&)> data) const
 {
   SaveSpec(spec);
   SaveData(data);
 }
 
-void BibDataFile::SaveSpec(function<void(std::ofstream&)> spec)
+void BibDataFile::SaveSpec(function<void(std::ofstream&)> spec) const
 {
   ofstream sf(spec_filename_, std::ios::out | std::ios::trunc);
   spec(sf);
 }
 
-void BibDataFile::SaveData(function<void(std::ofstream&)> data)
+void BibDataFile::SaveData(function<void(std::ofstream&)> data) const
 {
   ofstream df(data_filename_, std::ios::out | std::ios::trunc);
   data(df);
 }
 
-SpecLine MakeSpecLine(const Citation& item)
+unique_ptr<SpecLine> MakeSpecLine(const Citation& item)
 {
-  return {"", "", make_unique<ParsedSpecCitationBody>(item)};
+  return make_unique<SpecLine>("", "", make_unique<ParsedSpecCitationBody>(item));
 }
 
 namespace file {
 
-
-
-WdbibFileContent LoadWdbibData(const BibDataFile& file)
+unique_ptr<WdbibFileContent> LoadWdbibData(const BibDataFile& file)
 {
-  WdbibFileContent content;
+  auto content = make_unique<WdbibFileContent>();
 
-  SpecStatefulParser spec_parser(&content.spec);
+  SpecStatefulParser spec_parser(&(content->spec));
   file.LoadAll(
       [&](ifstream& f) {
         string line;
-        while (getline(line, f)) {
+        while (getline(f, line)) {
           spec_parser.Next(line);
         }
       },
@@ -81,23 +83,23 @@ WdbibFileContent LoadWdbibData(const BibDataFile& file)
         } catch (...) {
           d = json();
         }
-        content.data.Load(d);
+        content->data.Load(d);
       });
-  return std::move(content);
+  return content;
 }
 
-void SaveWdbibData(const BibDataFile& file, const WdbibFileContent& content)
+void SaveWdbibData(const BibDataFile& file, const WdbibFileContent* content)
 {
-  const auto& spec = content.spec;
-  const auto& data = content.data;
+  const auto& spec = content->spec;
+  const auto& data = content->data;
 
   if (spec.updated()) {
     file.SaveSpec([&](ofstream& f) {
-      for (auto i = 0; i < spec.Size(); ++i) {
+      for (size_t i = 0; i < spec.Size(); ++i) {
         if (auto s = spec.Line(i); s) {
-          auto rendered = s->parsed->toString();
-          if (rendered == s->content) {
-            f << s->data;
+          auto rendered = (*s)->parsed->toString();
+          if (rendered == (*s)->content) {
+            f << (*s)->data;
           } else {
             f << rendered;
           }
@@ -113,25 +115,26 @@ void SaveWdbibData(const BibDataFile& file, const WdbibFileContent& content)
 
 }  // namespace file
 
-string ParsedSpecVersionHeader::toString() override
+string ParsedSpecVersionHeader::toString() 
 {
   return absl::StrCat(version_);
 }
 
+extern const char* const kHeaderHintModifierDelimiter;
 struct HintsFormatter
 {
-  void operator()(std::string* out, const Hints& hint) const
+  void operator()(std::string* out, const Hint& hint) const
   {
     switch (hint.type) {
     case HintType::kArticle:
-      StrAppend(out, "article");
+      absl::StrAppend(out, "article");
       break;
     default:
       break;
     }
     switch (hint.modifier) {
     case HintModifier::kFirstWord:
-      StrAppend(out, kHeaderHintModifierDelimiter, "first word");
+      absl::StrAppend(out, gkHeaderHintModifierDelimiter, "first word");
       break;
 
     default:
@@ -140,37 +143,40 @@ struct HintsFormatter
   }
 };
 
-string ParsedSpecHintsHeader::toString() override
+extern const char* const gkHeaderHintsDelimiter;
+string ParsedSpecHintsHeader::toString()
 {
-  return absl::StrJoin(hints_, kHeaderHintsDelimiter, HintsFormatter());
+  return absl::StrJoin(hints_, gkHeaderHintsDelimiter, HintsFormatter());
 }
 
-string ParsedSpecCitationBody::toString() override
+extern const char* const gkPathDelimiter;
+
+string ParsedSpecCitationBody::toString()
 {
   if (!item_.aux_info.empty()) {
-    return absl::StrCat(item_.qid, kPathDelimiter,
-                        absl::StrJoin(item_.aux_info, kPathDelimiter));
+    return absl::StrCat(item_.qid, gkPathDelimiter,
+                        absl::StrJoin(item_.aux_info, gkPathDelimiter));
   } else {
     return item_.qid;
   }
 }
 
 void ParsedSpecVersionHeader::PopulateSpecContent(
-    SpecFileContent* content) override
+    SpecFileContent* content)
 {
   content->set_version(&version_);
 }
 
 void ParsedSpecHintsHeader::PopulateSpecContent(
-    SpecFileContent* content) override
+    SpecFileContent* content)
 {
   content->set_hints(&hints_);
 }
 
 void ParsedSpecCitationBody::PopulateSpecContent(
-    SpecFileContent* content) override
+    SpecFileContent* content)
 {
-  content.appendCitation(item_.qid);
+  content->appendCitation(item_.qid);
 }
 
 }  // namespace wdbib

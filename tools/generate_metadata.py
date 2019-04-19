@@ -79,7 +79,7 @@ def generate_props():
     with open(os.path.join(dir_path, '..', 'src', '_wikicite_props.gdh'), 'w') as out:
       write_header(out)
       output = [
-          '{' + f'"{PROPS[pid]}, {pid}"' + '}' for pid, _ in props["props"].items()
+          '{' + f'{PROPS[pid]}, "{pid}"' + '}' for pid, _ in props["props"].items()
       ]
       out.write(',\n'.join(output))
 
@@ -90,7 +90,7 @@ def generate_types():
   with open(os.path.join(dir_path, '..', 'src', '_wikicite_types.gdh'), 'w') as out:
     write_header(out)
     output = [
-        '{' + f'"{qid}, {TYPES[type]}"' + '}' for qid, type in types.items()
+        '{' + f'"{qid}", {TYPES[type]}' + '}' for qid, type in types.items()
     ]
     out.write(',\n'.join(output))
 

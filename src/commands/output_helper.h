@@ -103,7 +103,6 @@ class MultiLineSpinner
   }
 
  private:
-  int interval;
   vector<SpinnerObject> lines_;
   int32_t interval_;
   int32_t pool_size_;

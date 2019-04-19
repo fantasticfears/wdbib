@@ -16,6 +16,12 @@ using std::string;
 using std::unordered_map;
 using std::vector;
 
+namespace wd {
+
+struct WikidataItem;
+
+}  // namespace wd
+
 wd::WikidataItem ParseWikiciteJson(const string& id, const string& json_str);
 
 /*

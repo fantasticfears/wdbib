@@ -8,6 +8,7 @@
 #include "rang.hpp"
 
 #include "../storage/data_file.h"
+#include "../wdbib_data.h"
 
 namespace wdbib {
 
@@ -25,19 +26,18 @@ void RunListSubCommand()
 {
   using namespace std;
 
-  BibDataFile bib(kDefaultDataFilename);
-  BibDataLockFile lock(kDefaultCachedDataFilename);
+  BibDataFile bib(kDefaultDataFilename, kDefaultCachedDataExtrension);
   auto content = file::LoadWdbibData(bib);
 
-  for (const auto& qid : content.spec.QIDs()) {
-    auto status = content.data.Found(qid) ? "cached" : "local";
+  for (const auto& qid : content->spec.QIDs()) {
+    auto status = content->data.Found(qid) ? "cached" : "local";
     if (status == kLocalStatus) {
       cout << '[' << rang::fg::red << kLocalStatus << rang::fg::reset << "] ";
     } else {
       cout << '[' << rang::fg::magenta << kCachedStatus << rang::fg::reset
            << "] ";
     }
-    cout << rang::fg::blue << item.qid << rang::fg::reset << endl;
+    cout << rang::fg::blue << qid << rang::fg::reset << endl;
   }
 }
 

@@ -10,6 +10,7 @@
 #include <vector>
 
 #include <boost/core/noncopyable.hpp>
+#include <boost/move/utility_core.hpp>
 
 #include "../wikicite.h"
 
@@ -30,14 +31,14 @@ class BibDataFile : private boost::noncopyable
 {
  public:
   BibDataFile(const std::string& filename, const std::string& lock_ext);
-  void LoadAll(function<void(std::ifstream&)> spec,
-               function<void(std::ifstream&)> data) const;
-  void LoadSpec(function<void(std::ifstream&)> spec) const;
-  void LoadData(function<void(std::ifstream&)> data) const;
-  void SaveAll(function<void(std::ofstream&)> spec,
-               function<void(std::ofstream&)> data) const;
-  void SaveSpec(function<void(std::ofstream&)> spec) const;
-  void SaveData(function<void(std::ofstream&)> data) const;
+  void LoadAll(std::function<void(std::ifstream&)> spec,
+               std::function<void(std::ifstream&)> data) const;
+  void LoadSpec(std::function<void(std::ifstream&)> spec) const;
+  void LoadData(std::function<void(std::ifstream&)> data) const;
+  void SaveAll(std::function<void(std::ofstream&)> spec,
+               std::function<void(std::ofstream&)> data) const;
+  void SaveSpec(std::function<void(std::ofstream&)> spec) const;
+  void SaveData(std::function<void(std::ofstream&)> data) const;
 
  private:
   std::string spec_filename_;
@@ -45,27 +46,31 @@ class BibDataFile : private boost::noncopyable
 };
 
 class SpecFileContent;
-struct ParsedSpecLine : private boost::noncopyable
+class ParsedSpecLine : private boost::noncopyable
 {
+ public:
   virtual std::string toString() = 0;
   virtual void PopulateSpecContent(SpecFileContent* content) = 0;
+  virtual ~ParsedSpecLine(){};
 };
 const char* const kLineHeaderPrefix = "# ";
-struct ParsedSpecHeader : public ParsedSpecLine
+class ParsedSpecHeader : public ParsedSpecLine
 {
+ public:
   virtual std::string toString() override = 0;
-  virtual void PopulateSpecContent(SpecFileContent* content) = 0;
+  virtual void PopulateSpecContent(SpecFileContent* content) override = 0;
 };
-struct ParsedSpecBody : public ParsedSpecLine
+class ParsedSpecBody : public ParsedSpecLine
 {
+ public:
   virtual std::string toString() override = 0;
-  virtual void PopulateSpecContent(SpecFileContent* content) = 0;
+  virtual void PopulateSpecContent(SpecFileContent* content) override = 0;
 };
 
 struct Citation
 {
-  string qid;
-  vector<string> aux_info;
+  std::string qid;
+  std::vector<std::string> aux_info;
 };
 
 enum class HintType
@@ -75,20 +80,28 @@ enum class HintType
 
 enum class HintModifier
 {
+  kNothing,
   kFirstWord
 };
 
-struct Hints
+struct Hint
 {
   HintType type;
   HintModifier modifier;
 };
 
-struct SpecLine : private boost::noncopyable
+struct SpecLine
 {
+ public:
   std::string data;
   std::string_view content;
   std::unique_ptr<ParsedSpecLine> parsed;
+  SpecLine(std::string d, std::string_view c, std::unique_ptr<ParsedSpecLine> p)
+      : data(std::move(d)), content(std::move(c)), parsed(std::move(p))
+  {}
+
+ private:
+  BOOST_MOVABLE_BUT_NOT_COPYABLE(SpecLine)
 };
 
 class ParsedSpecVersionHeader : public ParsedSpecHeader
@@ -105,48 +118,45 @@ class ParsedSpecVersionHeader : public ParsedSpecHeader
 class ParsedSpecHintsHeader : public ParsedSpecHeader
 {
  public:
-  explicit ParsedSpecHintsHeader(const std::vector<Hints>& hints)
-      : hints_(hints)
-  {}
-  explicit ParsedSpecHintsHeader(std::vector<Hints> hints)
+  explicit ParsedSpecHintsHeader(std::vector<Hint> hints)
       : hints_(std::move(hints))
   {}
   virtual std::string toString() override;
   virtual void PopulateSpecContent(SpecFileContent* content) override;
+  std::vector<Hint>* hints() { return &hints_; };
 
  private:
-  std::vector<Hints> hints_;
+  std::vector<Hint> hints_;
 };
 
 class ParsedSpecLineBody : public ParsedSpecBody
 {
  public:
   virtual std::string toString() override { return {}; }
-  virtual void PopulateSpecContent(SpecFileContent* content) override {}
-
-}
+  virtual void PopulateSpecContent(SpecFileContent*) override {}
+};
 
 class ParsedSpecCitationBody : public ParsedSpecBody
 {
  public:
-  explicit ParsedSpecCitationBody(const Citation& item) : item_(item) {}
   explicit ParsedSpecCitationBody(Citation item) : item_(std::move(item)) {}
   virtual std::string toString() override;
   virtual void PopulateSpecContent(SpecFileContent* content) override;
+  Citation& item() { return item_; }
 
  private:
   Citation item_;
 };
 
-SpecLine MakeSpecLine(const Citation& item);
+std::unique_ptr<SpecLine> MakeSpecLine(const Citation& item);
 
-class WdbibFileContent;
+struct WdbibFileContent;
+class DataFileContent;
 
 namespace file {
 
-WdbibFileContent LoadWdbibData(const BibDataFile& file);
-DataFileContent LoadWdbibDataContent(const BibDataFile& file);
-void SaveWdbibData(const BibDataFile& file, const WdbibFileContent& content);
+std::unique_ptr<WdbibFileContent> LoadWdbibData(const BibDataFile& file);
+void SaveWdbibData(const BibDataFile& file, const WdbibFileContent* content);
 
 }  // namespace file
 

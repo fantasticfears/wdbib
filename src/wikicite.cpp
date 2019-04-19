@@ -1,10 +1,13 @@
-#pragma once
-#ifndef WIKICITE_H_
-#define WIKICITE_H_
-
 #include "wikicite.h"
 
 #include <string>
+
+#include <fmt/format.h>
+#include <absl/strings/str_cat.h>
+#include <absl/strings/str_join.h>
+
+#include "errors.h"
+#include "wdbib_data.h"
 
 namespace wdbib {
 
@@ -15,7 +18,7 @@ const unordered_map<string, WikiCiteItemType> gkWikiciteProps = {
 #include "_wikicite_types.gdh"
 };
 
-const unordered_map<string, WikidataProperty> gkWikidataProp = {
+const unordered_map<WikidataProperty, string> gkWikidataProp = {
 #include "_wikicite_props.gdh"
 };
 
@@ -65,11 +68,11 @@ void from_json(const json& j, WikidataItem& p)
 
 }  // namespace wd
 
-std::string JsonToBibTex(const nlohmann::json& j, const WdbibFileContent& content)
+std::string JsonToBibTex(const nlohmann::json& j, const WdbibFileContent* content)
 {
-  WikidataItem item;
+  wd::WikidataItem item;
   wd::from_json(j, item);
-  cite = WikidataToWikicite(item);
+  auto cite = WikidataToWikicite(item);
 
   string header;
   switch (cite.instance_of)
@@ -79,17 +82,17 @@ std::string JsonToBibTex(const nlohmann::json& j, const WdbibFileContent& conten
     break;
   
   case WikiCiteItemType::kMisc:
-    [[:fallthrough]];
+    [[fallthrough]];
   default:
     header += "@misc{";
     break;
   }
 
-  header += content.spec.Find(cite.qid)->toString();
+  header += content->spec.Find(cite.qid)->toString();
   
   vector<string> body;
   body.push_back(fmt::format("title = {%s}", cite.title));
-  return absl::StrCat(header, "{", absl::StrJoin(body, ','), "}\n");
+  return absl::StrCat(header, "{", absl::StrJoin(body, ","), "}\n");
 }
 
 WikiCiteItem WikidataToWikicite(const wd::WikidataItem& item)
@@ -100,24 +103,22 @@ WikiCiteItem WikidataToWikicite(const wd::WikidataItem& item)
 
   /* we must understand the type because of its importance and we need to filter random entities. */
   try {
-    auto instance_of_dv = item.claims[gkWikidataProp[WikidataProperty::kInstanceOf]];
+    auto& instance_of_dv = item.claims.at(gkWikidataProp.at(WikidataProperty::kInstanceOf));
+    if (instance_of_dv.type == wd::DataValueType::WikibaseEntityId) {
+      try {
+        cite.instance_of = gkWikiciteProps.at(instance_of_dv.value);
+      } catch (...) {
+        throw InvalidWikiciteItemError("not a valid wikicite item");
+      }
+    } else {
+      throw WikidataParsingError("item has a different type than expected.");
+    }
   } catch (...) {
     throw WikidataParsingError("item doesn't have type information");
   }
-  if (instance_of_dv.type == DataValueType::WikibaseEntityId) {
-    try {
-      cite.instance_of = gkWikiciteProps[instance_of_dv.value];
-    } catch (...) {
-      throw InvalidWikiciteItemError("not a valid wikicite item");
-    }
-  } else {
-    throw WikidataParsingError("item has a different type than expected.");
-  }
 
-  cite.title = item.labels["en"].front();
+  cite.title = item.labels.at("en").front();
   return cite;
 }
 
 }  // namespace wdbib
-
-#endif  // WIKICITE_H_

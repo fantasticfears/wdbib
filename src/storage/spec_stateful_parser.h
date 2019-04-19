@@ -5,27 +5,33 @@
 #include <string>
 #include <string_view>
 #include <memory>
+#include <vector>
 
 #include <boost/core/noncopyable.hpp>
 
 namespace wdbib {
 
-class SpecLine;
+struct SpecLine;
 class SpecFileContent;
 class ParsedSpecLine;
+struct Hint;
+
+const char* const gkPathDelimiter = ":";
+const char* const gkHeaderHintsDelimiter = "|"; 
+const char* const gkHeaderHintModifierDelimiter = "/"; 
 
 class SpecStatefulParser : private boost::noncopyable {
 public:
-  explicit SpecStatefulParser() {}
+  explicit SpecStatefulParser(SpecFileContent* spec): spec_(spec) {}
   void Next(std::string line);
 
   std::string_view probeState(const std::string& line);
-  std::unique_ptr<ParsedSpecLine> nextHeader(string_view content);
-  std::unique_ptr<ParsedSpecLine> nextHeaderVersion(string_view content);
-  std::unique_ptr<ParsedSpecLine> nextHeaderHints(string_view content);
-  std::unique_ptr<ParsedSpecLine> nextBody(string_view content);
+  std::unique_ptr<ParsedSpecLine> nextHeader(std::string_view content);
+  std::unique_ptr<ParsedSpecLine> nextHeaderVersion(std::string_view content);
+  std::unique_ptr<ParsedSpecLine> nextHeaderHints(std::string_view content);
+  std::unique_ptr<ParsedSpecLine> nextBody(std::string_view content);
   std::unique_ptr<ParsedSpecLine> nextBodyLine();
-  std::unique_ptr<ParsedSpecLine> nextBodyCitation(string_view content);
+  std::unique_ptr<ParsedSpecLine> nextBodyCitation(std::string_view content);
 private:
   enum class ParserStatus {
     kStart,
@@ -33,8 +39,10 @@ private:
     kBody
   } status_;
 
+  SpecFileContent* spec_;
   int64_t line_num_ = 0;
   int32_t prefix_size_;
+  std::vector<Hint>* hints_ = nullptr;
 };
 
 }  // namespace wdbib
