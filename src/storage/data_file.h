@@ -32,8 +32,10 @@ class BibDataFile : private boost::noncopyable
   BibDataFile(const std::string& filename, const std::string& lock_ext);
   void Load(function<void(std::ifstream&)> spec,
             function<void(std::ifstream&)> data);
-  void Save(function<void(std::ofstream&)> spec,
-            function<void(std::ofstream&)> data);
+  void SaveAll(function<void(std::ofstream&)> spec,
+               function<void(std::ofstream&)> data);
+  void SaveSpec(function<void(std::ofstream&)> spec);
+  void SaveData(function<void(std::ofstream&)> data);
 
  private:
   std::string spec_filename_;

@@ -25,11 +25,21 @@ void BibDataFile::Load(function<void(ifstream&)> spec,
   data(df);
 }
 
-void BibDataFile::Save(function<void(ofstream&)> spec,
-                       function<void(ofstream&)> data)
+void BibDataFile::SaveAll(function<void(ofstream&)> spec,
+                          function<void(ofstream&)> data)
 {
-  ofstream sf(spec_filename_);
+  SaveSpec(spec);
+  SaveData(data);
+}
+
+void BibDataFile::SaveSpec(function<void(std::ofstream&)> spec)
+{
+  ofstream sf(spec_filename_, std::ios::out | std::ios::trunc);
   spec(sf);
+}
+
+void BibDataFile::SaveData(function<void(std::ofstream&)> data)
+{
   ofstream df(data_filename_, std::ios::out | std::ios::trunc);
   data(df);
 }
@@ -65,13 +75,24 @@ void SaveWdbibData(const BibDataFile& file, const WdbibFileContent& content)
   const auto& spec = content.spec;
   const auto& data = content.data;
 
-  file.Save(
-      [&](ofstream& f) {
-        for (const auto& line : spec) {
-          f << line;
+  if (spec.updated()) {
+    file.SaveSpec([&](ofstream& f) {
+      for (auto i = 0; i < spec.Size(); ++i) {
+        if (auto s = spec.Line(i); s) {
+          auto rendered = s->parsed->toString();
+          if (rendered == s->content) {
+            f << s->data;
+          } else {
+            f << rendered;
+          }
+          f << endl;
         }
-      },
-      [&](ofstream& f) { f << data.Dump(); });
+      }
+    });
+  }
+  if (data.updated()) {
+    file.SaveData([&](ofstream& f) { f << data.Dump(); });
+  }
 }
 
 }  // namespace file
