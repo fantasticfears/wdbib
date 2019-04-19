@@ -30,18 +30,21 @@ class BibDataFile : private boost::noncopyable
 {
  public:
   BibDataFile(const std::string& filename, const std::string& lock_ext);
-  void Load(function<void(std::ifstream&)> spec,
-            function<void(std::ifstream&)> data);
+  void LoadAll(function<void(std::ifstream&)> spec,
+               function<void(std::ifstream&)> data) const;
+  void LoadSpec(function<void(std::ifstream&)> spec) const;
+  void LoadData(function<void(std::ifstream&)> data) const;
   void SaveAll(function<void(std::ofstream&)> spec,
-               function<void(std::ofstream&)> data);
-  void SaveSpec(function<void(std::ofstream&)> spec);
-  void SaveData(function<void(std::ofstream&)> data);
+               function<void(std::ofstream&)> data) const;
+  void SaveSpec(function<void(std::ofstream&)> spec) const;
+  void SaveData(function<void(std::ofstream&)> data) const;
 
  private:
   std::string spec_filename_;
   std::string data_filename_;
 };
 
+class SpecFileContent;
 struct ParsedSpecLine : private boost::noncopyable
 {
   virtual std::string toString() = 0;
@@ -142,6 +145,7 @@ class WdbibFileContent;
 namespace file {
 
 WdbibFileContent LoadWdbibData(const BibDataFile& file);
+DataFileContent LoadWdbibDataContent(const BibDataFile& file);
 void SaveWdbibData(const BibDataFile& file, const WdbibFileContent& content);
 
 }  // namespace file

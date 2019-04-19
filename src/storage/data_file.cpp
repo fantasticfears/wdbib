@@ -16,11 +16,20 @@ BibDataFile::BibDataFile(const string& filename, const string& lock_ext)
       data_filename_(absl::StrCat(filename, '.' lock_ext))
 {}
 
-void BibDataFile::Load(function<void(ifstream&)> spec,
-                       function<void(ifstream&)> data)
+void BibDataFile::LoadAll(function<void(ifstream&)> spec,
+                          function<void(ifstream&)> data) const
+{
+  LoadSpec(spec);
+  LoadData(data);
+}
+
+void BibDataFile::LoadSpec(function<void(std::ifstream&)> spec) const
 {
   ifstream sf(spec_filename_);
   spec(sf);
+}
+void BibDataFile::LoadData(function<void(std::ifstream&)> data) const
+{
   ifstream df(data_filename_);
   data(df);
 }
@@ -51,12 +60,14 @@ SpecLine MakeSpecLine(const Citation& item)
 
 namespace file {
 
+
+
 WdbibFileContent LoadWdbibData(const BibDataFile& file)
 {
   WdbibFileContent content;
 
   SpecStatefulParser spec_parser(&content.spec);
-  file.Load(
+  file.LoadAll(
       [&](ifstream& f) {
         string line;
         while (getline(line, f)) {

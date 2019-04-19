@@ -1,10 +1,9 @@
 #include "meta.h"
 
-#include <cstdlib>
 #include <fstream>
-#include <regex>
 
 #include "../storage/data_file.h"
+#include "../wikicite.h"
 
 namespace wdbib {
 
@@ -22,40 +21,20 @@ void SetupConvertSubCommand(CLI::App& app)
 
 void RunConvertSubCommand(const ConvertSubCmdOpt& opt)
 {
-  BibDataLockFile lock(kDefaultCachedDataFilename);
-  auto items = lock.All();
+  BibDataFile bib(kDefaultDataFilename);
+  auto content = file::LoadWdbibData(bib);
 
-  ofstream out(opt.output_path);
-  regex header_regex("([^\\s\\{]+\\{)",
-      std::regex_constants::ECMAScript | std::regex_constants::icase);
+  auto qids = content.spec.QIDs();
+  auto items = content.data.All();
 
-  for (const auto& kv : items) {
-    {
-      ofstream tmp(".tmp.json");
-      json t{};
-      t["entities"] = json();
-      t["entities"][kv.first] = kv.second;
-      tmp << t.dump();
+  ofstream out(opt.output_path, ios::out | ios::trunc);
+  for (const auto& qid : qids) {
+    auto j = items.find(qid);
+    if (j == items.end()) {
+      continue;
     }
-    system("citation-js -i .tmp.json -o .tmp -f string -s bibtex");
-    {
-      ifstream tmp(".tmp.bib");
-      string line;
-      getline(tmp, line);
-      auto begin = 
-        std::sregex_iterator(line.begin(), line.end(), header_regex);
-        auto end = std::sregex_iterator();
-      if (begin != end) {
-        out << begin->str() << kv.first << ',' << endl;
-      } else {
-        continue;
-      }
-      while (getline(tmp, line)) {
-        out << line << endl;
-      }
-    }
-    remove(".tmp.json");
-    remove(".tmp.bib");
+
+   output << JsonToBibTex(*j);
   }
 }
 

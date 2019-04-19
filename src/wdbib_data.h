@@ -10,7 +10,7 @@
 #include <boost/core/noncopyable.hpp>
 #include <nlohmann/json.hpp>
 
-#include "../storage/data_file.h"
+#include "storage/data_file.h"
 
 namespace wdbib {
 
@@ -23,6 +23,7 @@ class SpecFileContent : private boost::noncopyable
   std::optional<SpecLine*> Line(size_t line) const;
   void RemoveLine(size_t line);
   bool Found(const string& qid) const;
+  ParsedSpecCitationBody* Find(const string& qid) const;
   std::vector<std::string> QIDs() const;
 
   int32_t version() const { return verion_; }
@@ -51,15 +52,15 @@ class DataFileContent : private boost::noncopyable
   void Update(const nlohmann::json& resp);
   std::unordered_map<std::string, json> All() const
   {
-    auto r = json::parse(resp);
+    auto r = nlohmann::json::parse(resp);
     for (auto& [key, value] : r.at("entities").items()) {
       data_[key] = value;
     }
   }
   bool Found(const string& qid) { return data_.find(qid) != data_.end(); }
-  std::unordered_map<string, json> All() const
+  std::unordered_map<string, nlohmann::json> All() const
   {
-    std::unordered_map<string, json> res;
+    std::unordered_map<string, nlohmann::json> res;
     for (auto& [key, value] : data_.items()) {
       res[key] = value;
     }

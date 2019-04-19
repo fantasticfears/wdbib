@@ -40,16 +40,46 @@ TYPES = {
     "musical_score": "WikiCiteItemType::kMisc",
 }
 
+PROPS = {
+    "P31": "WikidataProperty::kInstanceOf",
+    "P50": "WikidataProperty::kAuthor",
+    "P57": "WikidataProperty::kDirector",
+    "P86": "WikidataProperty::kComposer",
+    "P98": "WikidataProperty::kEditor",
+    "P110": "WikidataProperty::kIllustrator",
+    "P123": "WikidataProperty::kPublisher",
+    "P136": "WikidataProperty::kGenre",
+    "P212": "WikidataProperty::kISBN",
+    "P236": "WikidataProperty::kISSN",
+    "P291": "WikidataProperty::kPublisherPlace",
+    "P304": "WikidataProperty::kPage",
+    "P348": "WikidataProperty::kVersion",
+    "P356": "WikidataProperty::kDOI",
+    "P393": "WikidataProperty::kEdition",
+    "P433": "WikidataProperty::kIssue",
+    "P478": "WikidataProperty::kVolume",
+    "P577": "WikidataProperty::kIssued",
+    "P655": "WikidataProperty::kTranslator",
+    "P698": "WikidataProperty::kPMID",
+    "P932": "WikidataProperty::kPMCID",
+    "P953": "WikidataProperty::kURL",
+    "P957": "WikidataProperty::kISBN",
+    "P1104": "WikidataProperty::kNnumberOfPages",
+    "P1433": "WikidataProperty::kContainerTitle",
+    "P1476": "WikidataProperty::kTitle",
+    "P2093": "WikidataProperty::kAuthor"
+}
+
 def write_header(out):
   out.write(f"// GENERATED FILE. DON'T MODIFY.\n// See {__file__}\n")
 
 def generate_props():
   with open(os.path.join(dir_path, 'props.json'), 'r') as f:
     props = json.load(f)
-    with open(os.path.join(dir_path, '..', 'src', '_wikicite_property.gdh'), 'w') as out:
+    with open(os.path.join(dir_path, '..', 'src', '_wikicite_props.gdh'), 'w') as out:
       write_header(out)
       output = [
-          '{' + f'"{qid}", {TYPES[type]}' + '}' for qid, type in types.items()
+          '{' + f'"{PROPS[pid]}, {pid}"' + '}' for pid, _ in props["props"].items()
       ]
       out.write(',\n'.join(output))
 
@@ -60,7 +90,7 @@ def generate_types():
   with open(os.path.join(dir_path, '..', 'src', '_wikicite_types.gdh'), 'w') as out:
     write_header(out)
     output = [
-        '{' + f'"{qid}", {TYPES[type]}' + '}' for qid, type in types.items()
+        '{' + f'"{qid}, {TYPES[type]}"' + '}' for qid, type in types.items()
     ]
     out.write(',\n'.join(output))
 

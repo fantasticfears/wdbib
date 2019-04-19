@@ -17,7 +17,17 @@ void SpecFileContent::Append(const SpecLine& line)
   parsed->PopulateSpecContent(this);
 }
 
-bool SpecFileContent::Found(const string& qid) const { return loaded_citation_.find(qid) != loaded_citation_.end(); };
+bool SpecFileContent::Found(const string& qid) const { auto m = loaded_citation_.find(qid); 
+  
+return m != loaded_citation_.end() && !lines_removed_[m->second]; }
+
+ParsedSpecCitationBody* SpecFileContent::Find(const string& qid) const
+{
+  if (!Found(qid)) {
+    throw std::runtime_error("can't find qid.");
+  }
+  return spec_lines_[loaded_citation_.find(qid)->second]->parsed.ptr();
+}
 
 std::vector<std::string> SpecFileContent::QIDs() const
 {

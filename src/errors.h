@@ -20,6 +20,20 @@ class InvalidSpecError : public std::runtime_error
   explicit InvalidSpecError(const char* what) : std::runtime_error(what) {}
 };
 
+class WikidataParsingError : public std::runtime_error
+{
+ public:
+  explicit WikidataParsingError(const std::string& what) : std::runtime_error(what) {}
+  explicit WikidataParsingError(const char* what) : std::runtime_error(what) {}
+};
+
+class InvalidWikiciteItemError : public std::runtime_error
+{
+ public:
+  explicit InvalidWikiciteItemError(const std::string& what) : std::runtime_error(what) {}
+  explicit InvalidWikiciteItemError(const char* what) : std::runtime_error(what) {}
+};
+
 }  // namespace wdbib
 
 #endif  // ERRORS_H_
