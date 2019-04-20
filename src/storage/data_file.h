@@ -128,6 +128,12 @@ class ParsedSpecHintsHeader : public ParsedSpecHeader
  private:
   std::vector<Hint> hints_;
 };
+class ParsedSpecLineHeader : public ParsedSpecHeader
+{
+ public:
+  virtual std::string toString() override { return {}; }
+  virtual void PopulateSpecContent(SpecFileContent*) override {}
+};
 
 class ParsedSpecLineBody : public ParsedSpecBody
 {

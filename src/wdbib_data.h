@@ -26,6 +26,7 @@ class SpecFileContent : private boost::noncopyable
   bool Found(const std::string& qid) const;
   ParsedSpecCitationBody* Find(const std::string& qid) const;
   std::vector<std::string> QIDs() const;
+  std::string Dump() const;
 
   int32_t* version() const { return version_; }
   void set_version(int32_t* version) { version_ = version; }

@@ -94,17 +94,7 @@ void SaveWdbibData(const BibDataFile& file, const WdbibFileContent* content)
 
   if (spec.updated()) {
     file.SaveSpec([&](ofstream& f) {
-      for (size_t i = 0; i < spec.Size(); ++i) {
-        if (auto s = spec.Line(i); s) {
-          auto rendered = (*s)->parsed->toString();
-          if (rendered == (*s)->content) {
-            f << (*s)->data;
-          } else {
-            f << rendered;
-          }
-          f << endl;
-        }
-      }
+      f << spec.Dump();
     });
   }
   if (data.updated()) {

@@ -36,6 +36,27 @@ ParsedSpecCitationBody* SpecFileContent::Find(const string& qid) const
       spec_lines_[loaded_citation_.find(qid)->second]->parsed.get());
 }
 
+std::string SpecFileContent::Dump() const
+{
+  string res;
+  for (size_t i = 0; i < Size(); ++i) {
+    if (auto s = Line(i); s) {
+      const auto& parsed = (*s)->parsed;
+      const auto& data = (*s)->data;
+      const auto& content = (*s)->content;
+
+      auto rendered = parsed->toString();
+      if (rendered == content) {
+        absl::StrAppend(&res, data, "\n");
+      } else {
+        absl::StrAppend(&res, data.substr(0, data.find(content)), rendered, "\n");
+      }
+    }
+  }
+  return res;
+}
+
+
 std::vector<std::string> SpecFileContent::QIDs() const
 {
   vector<size_t> qid_spec_line_idx;
