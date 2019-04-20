@@ -32,8 +32,10 @@ string_view SpecStatefulParser::probeState(const string& line)
     } else if (absl::StartsWith(lstriped, kHeaderPrefix)) {
       status_ = ParserStatus::kHeader;
     } else if (absl::StartsWith(lstriped, kHeaderPrefix2)) {
-            status_ = ParserStatus::kHeader;
+      status_ = ParserStatus::kHeader;
       prefix_size_ = kLenHeaderPrefix2;
+    } else {
+      status_ = ParserStatus::kBody;
     }
   } else if (status_ == ParserStatus::kHeader) {
     if (lstriped.empty()) {
@@ -65,11 +67,12 @@ void SpecStatefulParser::Next(string line)
     spec_->Append(make_unique<SpecLine>(line, content, nextBody(content)));
     break;
   default:
-    throw ParsingError(fmt::format("invalid internal state at line {}", line_num_));
+    throw ParsingError(
+        fmt::format("invalid internal state at line {}", line_num_));
   }
 }
 
-const char kHeaderDelimiter = ':'; 
+const char kHeaderDelimiter = ':';
 const char* const kHeaderVersionKey = "version";
 const char* const kHeaderHintsKey = "hints";
 
@@ -84,11 +87,13 @@ unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeader(string_view content)
   } else if (key == kHeaderHintsKey) {
     return nextHeaderHints(value);
   } else {
-    throw ParsingError(fmt::format("invalid key items {} at line {}", key, line_num_));
+    throw ParsingError(
+        fmt::format("invalid key items {} at line {}", key, line_num_));
   }
 }
 
-unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeaderVersion(string_view content)
+unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeaderVersion(
+    string_view content)
 {
   int32_t ver = 1;
   if (content.empty() || !absl::SimpleAtoi(content, &ver)) {
@@ -98,35 +103,38 @@ unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeaderVersion(string_view con
   if (ver != 1) {
     throw InvalidSpecError("invalid version. 1 is supported.");
   }
-  
+
   return make_unique<ParsedSpecVersionHeader>(ver);
 }
 
-unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeaderHints(string_view content)
+unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeaderHints(
+    string_view content)
 {
   if (content.empty()) {
-    throw ParsingError(fmt::format("parseing header error on hints at line ", line_num_));
+    throw ParsingError(
+        fmt::format("parseing header error on hints at line ", line_num_));
   }
-  
+
   vector<Hint> hints;
   for (auto s : absl::StrSplit(content, gkHeaderHintsDelimiter)) {
     if (s.empty() || s.front() != '[' || s.back() != ']') {
-      throw ParsingError(absl::StrCat("incorrect hints at line ", line_num_));
+      throw ParsingError(fmt::format("incorrect hints at line {}: {}", line_num_, "an [identifier] is not recoginized."));
     }
     s.remove_prefix(1);
     s.remove_suffix(1);
     pair<string, string> h = absl::StrSplit(s, gkHeaderHintModifierDelimiter);
     HintType type;
-    if (h.first == "article") {
-      type = HintType::kArticle;
+    if (h.first == "title") {
+      type = HintType::kTitle;
     } else {
-      throw InvalidSpecError(fmt::format("invalid hint type {} at line {}", h.first, line_num_));
+      throw InvalidSpecError(
+          fmt::format("invalid hint type {} at line {}", h.first, line_num_));
     }
     HintModifier modifier = HintModifier::kNothing;
     if (h.second == "first word") {
       modifier = HintModifier::kFirstWord;
     }
-    hints.push_back({ type, modifier });
+    hints.push_back({type, modifier});
   }
   auto res = make_unique<ParsedSpecHintsHeader>(std::move(hints));
   hints_ = res.get()->hints();
@@ -147,8 +155,8 @@ unique_ptr<ParsedSpecLine> SpecStatefulParser::nextBodyLine()
   return make_unique<ParsedSpecLineBody>();
 }
 
-
-unique_ptr<ParsedSpecLine> SpecStatefulParser::nextBodyCitation(string_view content)
+unique_ptr<ParsedSpecLine> SpecStatefulParser::nextBodyCitation(
+    string_view content)
 {
   vector<string> parts = absl::StrSplit(content, gkPathDelimiter);
   if (parts.empty() || !absl::StartsWith(parts.front(), "Q")) {

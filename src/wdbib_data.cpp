@@ -81,6 +81,6 @@ void DataFileContent::Load(const nlohmann::json& data)
   set_updated(true);
 }
 
-string DataFileContent::Dump() const { return data_.dump(); }
+string DataFileContent::Dump() const { return data_.get<std::string>(); }
 
 }  // namespace wdbib

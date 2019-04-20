@@ -126,8 +126,8 @@ struct HintsFormatter
   void operator()(std::string* out, const Hint& hint) const
   {
     switch (hint.type) {
-    case HintType::kArticle:
-      absl::StrAppend(out, "article");
+    case HintType::kTitle:
+      absl::StrAppend(out, "title");
       break;
     default:
       break;

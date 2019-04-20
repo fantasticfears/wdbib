@@ -28,13 +28,18 @@ void RunConvertSubCommand(const ConvertSubCmdOpt& opt)
   auto qids = content->spec.QIDs();
   auto items = content->data.All();
 
+  for (auto [k,v] : items ) {
+    cout << k<<endl;
+  }
   ofstream out(opt.output_path, ios::out | ios::trunc);
   for (const auto& qid : qids) {
     auto j = items.find(qid);
+    cout<< qid << (j == items.end()) << std::endl;
     if (j == items.end()) {
       continue;
     }
 
+  cout << JsonToBibTex(*j, content.get());
    out << JsonToBibTex(*j, content.get());
   }
 }

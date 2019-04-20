@@ -75,7 +75,7 @@ struct Citation
 
 enum class HintType
 {
-  kArticle
+  kTitle
 };
 
 enum class HintModifier

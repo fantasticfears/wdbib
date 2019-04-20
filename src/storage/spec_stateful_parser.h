@@ -37,7 +37,7 @@ private:
     kStart,
     kHeader,
     kBody
-  } status_;
+  } status_ = ParserStatus::kStart;
 
   SpecFileContent* spec_;
   int64_t line_num_ = 0;
