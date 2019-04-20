@@ -53,17 +53,17 @@ class DataFileContent : private boost::noncopyable
   void Update(const nlohmann::json& resp);
   void Remove(const std::string& qid);
   bool Found(const std::string& qid) { return data_.find(qid) != data_.end(); }
-  std::unordered_map<std::string, nlohmann::json>& All() const
+  std::unordered_map<std::string, nlohmann::json>& All() 
   {
     return data_;
   }
 
-  nlohmann::json& data() { return data_; }
+  // nlohmann::json& data() { return data_; }
   bool updated() const { return updated_; }
   void set_updated(bool updated = true) { updated_ = updated; }
 
  private:
-  unordered_map<std::string, nnlohmann::json> data_;
+  unordered_map<std::string, nlohmann::json> data_;
   bool updated_;
 };
 

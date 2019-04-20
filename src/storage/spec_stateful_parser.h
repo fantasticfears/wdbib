@@ -20,10 +20,17 @@ const char* const gkPathDelimiter = ":";
 const char* const gkHeaderHintsDelimiter = "|"; 
 const char* const gkHeaderHintModifierDelimiter = "/"; 
 
+enum class ParserStatus {
+  kStart,
+  kHeader,
+  kBody
+};
+
 class SpecStatefulParser : private boost::noncopyable {
 public:
   explicit SpecStatefulParser(SpecFileContent* spec): spec_(spec) {}
   void Next(std::string line);
+  ParserStatus status() const { return status_; };
 
   std::string_view probeState(const std::string& line);
   std::unique_ptr<ParsedSpecLine> nextHeader(std::string_view content);
@@ -33,11 +40,7 @@ public:
   std::unique_ptr<ParsedSpecLine> nextBodyLine();
   std::unique_ptr<ParsedSpecLine> nextBodyCitation(std::string_view content);
 private:
-  enum class ParserStatus {
-    kStart,
-    kHeader,
-    kBody
-  } status_ = ParserStatus::kStart;
+  ParserStatus status_ = ParserStatus::kStart;
 
   SpecFileContent* spec_;
   int64_t line_num_ = 0;

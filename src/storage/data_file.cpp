@@ -77,11 +77,10 @@ unique_ptr<WdbibFileContent> LoadWdbibData(const BibDataFile& file)
         }
       },
       [&](ifstream& f) {
-        json d;
+        json d = json();
         try {
           d = json::parse(f);
         } catch (...) {
-          d = json();
         }
         content->data.Load(d);
       });

@@ -1,5 +1,9 @@
 #include "wdbib_data.h"
 
+#include <absl/strings/str_cat.h>
+
+#include "errors.h"
+
 namespace wdbib {
 
 void SpecFileContent::appendCitation(const string& qid)
@@ -68,19 +72,46 @@ void SpecFileContent::RemoveLine(size_t line)
   }
 }
 
-// FIXME: UPDATE
 void DataFileContent::Update(const nlohmann::json& data)
 {
-  data_ = data;
-  set_updated(true);
+  try {
+    auto id = data.at("id").get<string>();
+
+    auto p = data_.find(id);
+    if (p == data_.end()) {
+      data_.insert({id, data});
+    } else if (data != p->second) {
+      p->second = data;
+      set_updated(true);
+    }
+  } catch (...) {
+    throw WikidataParsingError("internal state update failure: illformat wikidata json tries to be added into db"); 
+  }
 }
 
+/*
+ * For database loading
+ */
 void DataFileContent::Load(const nlohmann::json& data)
 {
-  data_ = data;
-  set_updated(true);
+  for (auto& el : data.items()) {
+    data_.insert({el.key(), json(el.value())});
+  }
 }
 
-string DataFileContent::Dump() const { return data_.get<std::string>(); }
+void DataFileContent::Remove(const std::string& qid)
+{
+  data_.erase(qid);
+}
+
+string DataFileContent::Dump() const {
+  string serialized = "{";
+
+  for (const auto& [k, v] : data_) {
+    absl::StrAppend(&serialized, "\"", k, "\":", v.get<std::string>());
+  }
+  absl::StrAppend(&serialized, "}");
+  return serialized;
+}
 
 }  // namespace wdbib
