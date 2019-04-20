@@ -22,13 +22,13 @@ struct WikidataItem;
 
 }  // namespace wd
 
-wd::WikidataItem ParseWikiciteJson(const string& id, const string& json_str);
+json ParseWikiciteJson(const string& id, const string& json_str);
 
 /*
  * Performs a network request to Wikidata and downloads file.
  * Throws exceptions.
  */
-std::pair<wd::WikidataItem, string> GetWikiciteItem(const string& qID);
+std::pair<wd::WikidataItem, json> GetWikidataItem(const string& qID);
 
 string GetWikidataItems(const string& query_ids);
 string GetWikidataItems(const vector<string>& q_ids);

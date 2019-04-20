@@ -4,6 +4,8 @@
 #include "../storage/data_file.h"
 #include "../wdbib_data.h"
 
+#include <iostream>
+
 namespace wdbib {
 
 void runSyncSubCommand()
@@ -11,7 +13,11 @@ void runSyncSubCommand()
   BibDataFile bib(kDefaultDataFilename, kDefaultCachedDataExtrension);
   auto content = file::LoadWdbibData(bib);
 
-  content->data.Update(GetWikidataItems(content->spec.QIDs()));
+  cout << content->spec.QIDs()[0] ;
+  json parsed = json::parse(GetWikidataItems(content->spec.QIDs()));
+  for (const auto& [k,v] : parsed.at("entities").items()) {
+    content->data.Update(v);
+  }
   file::SaveWdbibData(bib, content.get());
 }
 

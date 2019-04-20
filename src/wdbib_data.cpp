@@ -97,8 +97,7 @@ void SpecFileContent::RemoveLine(size_t line)
 void DataFileContent::Update(const nlohmann::json& data)
 {
   try {
-    auto id = data.at("id").get<string>();
-
+    auto id = data.get<wd::WikidataItem>().id;
     auto p = data_.find(id);
     if (p == data_.end()) {
       data_.insert({id, data});

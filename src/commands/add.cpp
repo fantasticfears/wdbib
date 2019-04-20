@@ -29,11 +29,12 @@ void SetupAddSubCommand(CLI::App& app)
   cmd->callback([opt]() { RunAddSubCommand(*opt); });
 }
 
-typedef pair<Citation, string> CitationResult;
+typedef pair<Citation, json> CitationResult;
 optional<CitationResult> requestCitationFromQID(const string& qid)
 {
-  auto item = GetWikiciteItem(qid);
+  auto item = GetWikidataItem(qid);
   Citation cite{item.first.id, {}};
+
   return {make_pair(cite, item.second)};
 }
 
