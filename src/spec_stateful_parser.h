@@ -16,10 +16,6 @@ class SpecFileContent;
 class ParsedSpecLine;
 struct Hint;
 
-const char* const gkPathDelimiter = ":";
-const char* const gkHeaderHintsDelimiter = "|";
-const char* const gkHeaderHintModifierDelimiter = "/";
-
 enum class ParserStatus
 {
   kStart,

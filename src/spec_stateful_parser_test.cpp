@@ -2,8 +2,8 @@
 
 #include <catch.hpp>
 
-#include "../wdbib_data.h"
-#include "../errors.h"
+#include "errors.h"
+#include "wdbib_data.h"
 
 namespace wdbib {
 
@@ -66,6 +66,23 @@ TEST_CASE("parses the header", "[parsing][state]")
 
     p.Next("#  version: 1");
     REQUIRE(*content.version() == 1);
+  }
+}
+
+TEST_CASE("parses the body", "[parsing][state]")
+{
+  SECTION("can parses bare form citations")
+  {
+    SpecFileContent content;
+    SpecStatefulParser p(&content);
+
+    p.Next("Q29547544");
+    p.Next("Q36317269");
+    p.Next("Q24544311");
+    REQUIRE(content.Found("Q29547544"));
+    REQUIRE(content.Found("Q36317269"));
+    REQUIRE(content.Found("Q24544311"));
+    REQUIRE(!content.Found("Q44"));
   }
 }
 

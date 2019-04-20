@@ -6,10 +6,9 @@
 #include <memory>
 
 #include <absl/strings/str_cat.h>
-#include <absl/strings/str_join.h>
 
 #include "../wdbib_data.h"
-#include "spec_stateful_parser.h"
+#include "../spec_stateful_parser.h"
 
 namespace wdbib {
 
@@ -57,11 +56,6 @@ void BibDataFile::SaveData(function<void(std::ofstream&)> data) const
   data(df);
 }
 
-unique_ptr<SpecLine> MakeSpecLine(const Citation& item)
-{
-  return make_unique<SpecLine>("", "", make_unique<ParsedSpecCitationBody>(item));
-}
-
 namespace file {
 
 unique_ptr<WdbibFileContent> LoadWdbibData(const BibDataFile& file)
@@ -103,69 +97,5 @@ void SaveWdbibData(const BibDataFile& file, const WdbibFileContent* content)
 }
 
 }  // namespace file
-
-string ParsedSpecVersionHeader::toString() 
-{
-  return absl::StrCat(version_);
-}
-
-extern const char* const kHeaderHintModifierDelimiter;
-struct HintsFormatter
-{
-  void operator()(std::string* out, const Hint& hint) const
-  {
-    switch (hint.type) {
-    case HintType::kTitle:
-      absl::StrAppend(out, "title");
-      break;
-    default:
-      break;
-    }
-    switch (hint.modifier) {
-    case HintModifier::kFirstWord:
-      absl::StrAppend(out, gkHeaderHintModifierDelimiter, "first word");
-      break;
-
-    default:
-      break;
-    }
-  }
-};
-
-extern const char* const gkHeaderHintsDelimiter;
-string ParsedSpecHintsHeader::toString()
-{
-  return absl::StrJoin(hints_, gkHeaderHintsDelimiter, HintsFormatter());
-}
-
-extern const char* const gkPathDelimiter;
-
-string ParsedSpecCitationBody::toString()
-{
-  if (!item_.aux_info.empty()) {
-    return absl::StrCat(item_.qid, gkPathDelimiter,
-                        absl::StrJoin(item_.aux_info, gkPathDelimiter));
-  } else {
-    return item_.qid;
-  }
-}
-
-void ParsedSpecVersionHeader::PopulateSpecContent(
-    SpecFileContent* content)
-{
-  content->set_version(&version_);
-}
-
-void ParsedSpecHintsHeader::PopulateSpecContent(
-    SpecFileContent* content)
-{
-  content->set_hints(&hints_);
-}
-
-void ParsedSpecCitationBody::PopulateSpecContent(
-    SpecFileContent* content)
-{
-  content->appendCitation(item_.qid);
-}
 
 }  // namespace wdbib

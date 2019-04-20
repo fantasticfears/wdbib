@@ -9,9 +9,9 @@
 #include <absl/strings/str_split.h>
 #include <fmt/format.h>
 
-#include "../errors.h"
-#include "../wdbib_data.h"
-#include "data_file.h"
+#include "errors.h"
+#include "wdbib_data.h"
+#include "storage/data_file.h"
 
 namespace wdbib {
 

@@ -1,6 +1,7 @@
 #include "wdbib_data.h"
 
 #include <absl/strings/str_cat.h>
+#include <absl/strings/str_join.h>
 
 #include "errors.h"
 
@@ -133,6 +134,78 @@ string DataFileContent::Dump() const {
   }
   absl::StrAppend(&serialized, "}");
   return serialized;
+}
+
+unique_ptr<SpecLine> MakeSpecLine(const Citation& item)
+{
+  return make_unique<SpecLine>("", "", make_unique<ParsedSpecCitationBody>(item));
+}
+
+string ParsedSpecVersionHeader::toString() 
+{
+  return absl::StrCat(version_);
+}
+
+// extern const char* const kHeaderHintModifierDelimiter;
+// const char* const gkPathDelimiter = ":";
+// const char* const gkHeaderHintsDelimiter = "|";
+// extern const char* const gkHeaderHintModifierDelimiter = "/";
+struct HintsFormatter
+{
+  void operator()(std::string* out, const Hint& hint) const
+  {
+    switch (hint.type) {
+    case HintType::kTitle:
+      absl::StrAppend(out, "title");
+      break;
+    default:
+      break;
+    }
+    switch (hint.modifier) {
+    case HintModifier::kFirstWord:
+      absl::StrAppend(out, gkHeaderHintModifierDelimiter, "first word");
+      break;
+
+    default:
+      break;
+    }
+  }
+};
+
+extern const char* const gkHeaderHintsDelimiter;
+string ParsedSpecHintsHeader::toString()
+{
+  return absl::StrJoin(hints_, gkHeaderHintsDelimiter, HintsFormatter());
+}
+
+extern const char* const gkPathDelimiter;
+
+string ParsedSpecCitationBody::toString()
+{
+  if (!item_.aux_info.empty()) {
+    return absl::StrCat(item_.qid, gkPathDelimiter,
+                        absl::StrJoin(item_.aux_info, gkPathDelimiter));
+  } else {
+    return item_.qid;
+  }
+}
+
+void ParsedSpecVersionHeader::PopulateSpecContent(
+    SpecFileContent* content)
+{
+  content->set_version(&version_);
+}
+
+void ParsedSpecHintsHeader::PopulateSpecContent(
+    SpecFileContent* content)
+{
+  content->set_hints(&hints_);
+}
+
+void ParsedSpecCitationBody::PopulateSpecContent(
+    SpecFileContent* content)
+{
+  content->appendCitation(item_.qid);
 }
 
 }  // namespace wdbib
