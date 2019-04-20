@@ -19,9 +19,9 @@ TEST_CASE("parse the spec", "[parsing]")
                     ParsingError);
 
   REQUIRE_THROWS_AS(TryParseSpecWithDefault("2", content::kDefaultSpec, 1),
-                    InvalidSpecError);
+                    InvalidHeaderError);
   REQUIRE_THROWS_AS(TryParseSpecWithDefault(" 2", content::kDefaultSpec, 1),
-                    InvalidSpecError);
+                    InvalidHeaderError);
 
   REQUIRE(TryParseSpecWithDefault(" 1", content::kDefaultSpec, 1) == "1");
   REQUIRE(TryParseSpecWithDefault("1", content::kDefaultSpec, 1) == "1");

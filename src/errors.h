@@ -13,11 +13,11 @@ class ParsingError : public std::runtime_error
   explicit ParsingError(const char* what) : std::runtime_error(what) {}
 };
 
-class InvalidSpecError : public std::runtime_error
+class InvalidHeaderError : public std::runtime_error
 {
  public:
-  explicit InvalidSpecError(const std::string& what) : std::runtime_error(what) {}
-  explicit InvalidSpecError(const char* what) : std::runtime_error(what) {}
+  explicit InvalidHeaderError(const std::string& what) : std::runtime_error(what) {}
+  explicit InvalidHeaderError(const char* what) : std::runtime_error(what) {}
 };
 
 class WikidataParsingError : public std::runtime_error

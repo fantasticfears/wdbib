@@ -78,6 +78,9 @@ const char* const kHeaderHintsKey = "hints";
 
 unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeader(string_view content)
 {
+  if (content.empty()) {
+    return nextHeaderLine();
+  }
   pair<string, string> p = absl::StrSplit(content, kHeaderDelimiter);
 
   auto key = absl::StripLeadingAsciiWhitespace(p.first);
@@ -92,6 +95,11 @@ unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeader(string_view content)
   }
 }
 
+unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeaderLine()
+{
+  return make_unique<ParsedSpecLineHeader>();
+}
+
 unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeaderVersion(
     string_view content)
 {
@@ -101,7 +109,7 @@ unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeaderVersion(
         fmt::format("parsing header error on version at line ", line_num_));
   }
   if (ver != 1) {
-    throw InvalidSpecError("invalid version. 1 is supported.");
+    throw InvalidHeaderError("invalid version. 1 is supported.");
   }
 
   return make_unique<ParsedSpecVersionHeader>(ver);
@@ -127,7 +135,7 @@ unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeaderHints(
     if (h.first == "title") {
       type = HintType::kTitle;
     } else {
-      throw InvalidSpecError(
+      throw InvalidHeaderError(
           fmt::format("invalid hint type {} at line {}", h.first, line_num_));
     }
     HintModifier modifier = HintModifier::kNothing;

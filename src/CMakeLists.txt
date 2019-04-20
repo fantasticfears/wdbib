@@ -26,6 +26,7 @@ target_compile_features(wdbib PUBLIC cxx_std_17)
 
 add_executable(wdbib_test
     system_test.cpp
+    storage/spec_stateful_parser_test.cpp
 )
 # network/wikidata_test.cpp
 # storage/data_file_test.cpp
