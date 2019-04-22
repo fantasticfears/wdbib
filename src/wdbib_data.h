@@ -74,6 +74,7 @@ struct SpecLine
   SpecLine(std::string d, std::string_view c, std::unique_ptr<ParsedSpecLine> p)
       : data(std::move(d)), content(std::move(c)), parsed(std::move(p))
   {}
+  explicit SpecLine() = default;
 
  private:
   BOOST_MOVABLE_BUT_NOT_COPYABLE(SpecLine)

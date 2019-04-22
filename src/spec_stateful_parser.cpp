@@ -58,13 +58,18 @@ void SpecStatefulParser::Next(string line)
   line_num_++;
   absl::StripTrailingAsciiWhitespace(&line);
 
-  auto content = probeState(line);
+  auto spec_line = make_unique<SpecLine>();
+  spec_line->data = line;
+  spec_line->content = probeState(spec_line->data);
+
   switch (status_) {
   case ParserStatus::kHeader:
-    spec_->Append(make_unique<SpecLine>(line, content, nextHeader(content)));
+    spec_line->parsed = nextHeader(spec_line->content); 
+    spec_->Append(std::move(spec_line));
     break;
   case ParserStatus::kBody:
-    spec_->Append(make_unique<SpecLine>(line, content, nextBody(content)));
+    spec_line->parsed = nextBody(spec_line->content);
+    spec_->Append(std::move(spec_line));
     break;
   default:
     throw ParsingError(

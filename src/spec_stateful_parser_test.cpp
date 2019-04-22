@@ -84,6 +84,18 @@ TEST_CASE("parses the body", "[parsing][state]")
     REQUIRE(content.Found("Q24544311"));
     REQUIRE(!content.Found("Q44"));
   }
+
+
+  SECTION("can parses bare form citations")
+  {
+    SpecFileContent content;
+    SpecStatefulParser p(&content);
+
+    p.Next("# version: 1");
+    p.Next("");
+    p.Next("Q29547544");
+    REQUIRE((*content.Line(3))->content == "Q29547544");
+  }
 }
 
 }  // namespace wdbib

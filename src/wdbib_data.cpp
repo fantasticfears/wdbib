@@ -2,6 +2,7 @@
 
 #include <absl/strings/str_cat.h>
 #include <absl/strings/str_join.h>
+#include "spdlog/spdlog.h"
 
 #include "errors.h"
 
@@ -40,7 +41,7 @@ ParsedSpecCitationBody* SpecFileContent::Find(const string& qid) const
 std::string SpecFileContent::Dump() const
 {
   string res;
-  for (size_t i = 0; i < Size(); ++i) {
+  for (size_t i = 1; i <= Size(); ++i) {
     if (auto s = Line(i); s) {
       const auto& parsed = (*s)->parsed;
       const auto& data = (*s)->data;
@@ -50,13 +51,14 @@ std::string SpecFileContent::Dump() const
       if (rendered == content) {
         absl::StrAppend(&res, data, "\n");
       } else {
-        absl::StrAppend(&res, data.substr(0, data.find(content)), rendered, "\n");
+        absl::StrAppend(&res, data.substr(data.find(content)), rendered, "\n");
+        spdlog::get("stderr")->debug("dump spec: %s\n", res);
+        spdlog::get("stderr")->debug("content stored: %s\n", content);
       }
     }
   }
   return res;
 }
-
 
 std::vector<std::string> SpecFileContent::QIDs() const
 {
@@ -79,6 +81,7 @@ std::vector<std::string> SpecFileContent::QIDs() const
 
 std::optional<const SpecLine*> SpecFileContent::Line(size_t line) const
 {
+  line--;
   if (line < spec_lines_.size() && !lines_removed_[line]) {
     return {const_cast<const SpecLine*>(spec_lines_[line].get())};
   } else {
@@ -88,6 +91,7 @@ std::optional<const SpecLine*> SpecFileContent::Line(size_t line) const
 
 void SpecFileContent::RemoveLine(size_t line)
 {
+  line--;
   if (line < lines_removed_.size()) {
     lines_removed_[line] = true;
     set_updated(true);
@@ -106,7 +110,9 @@ void DataFileContent::Update(const nlohmann::json& data)
       set_updated(true);
     }
   } catch (...) {
-    throw WikidataParsingError("internal state update failure: illformat wikidata json tries to be added into db"); 
+    throw WikidataParsingError(
+        "internal state update failure: illformat wikidata json tries to be "
+        "added into db");
   }
 }
 
@@ -120,12 +126,10 @@ void DataFileContent::Load(const nlohmann::json& data)
   }
 }
 
-void DataFileContent::Remove(const std::string& qid)
-{
-  data_.erase(qid);
-}
+void DataFileContent::Remove(const std::string& qid) { data_.erase(qid); }
 
-string DataFileContent::Dump() const {
+string DataFileContent::Dump() const
+{
   string serialized = "{";
 
   for (const auto& [k, v] : data_) {
@@ -137,13 +141,11 @@ string DataFileContent::Dump() const {
 
 unique_ptr<SpecLine> MakeSpecLine(const Citation& item)
 {
-  return make_unique<SpecLine>("", "", make_unique<ParsedSpecCitationBody>(item));
+  return make_unique<SpecLine>("", "",
+                               make_unique<ParsedSpecCitationBody>(item));
 }
 
-string ParsedSpecVersionHeader::toString() 
-{
-  return absl::StrCat(version_);
-}
+string ParsedSpecVersionHeader::toString() { return absl::StrCat(version_); }
 
 // extern const char* const kHeaderHintModifierDelimiter;
 // const char* const gkPathDelimiter = ":";
@@ -189,20 +191,17 @@ string ParsedSpecCitationBody::toString()
   }
 }
 
-void ParsedSpecVersionHeader::PopulateSpecContent(
-    SpecFileContent* content)
+void ParsedSpecVersionHeader::PopulateSpecContent(SpecFileContent* content)
 {
   content->set_version(&version_);
 }
 
-void ParsedSpecHintsHeader::PopulateSpecContent(
-    SpecFileContent* content)
+void ParsedSpecHintsHeader::PopulateSpecContent(SpecFileContent* content)
 {
   content->set_hints(&hints_);
 }
 
-void ParsedSpecCitationBody::PopulateSpecContent(
-    SpecFileContent* content)
+void ParsedSpecCitationBody::PopulateSpecContent(SpecFileContent* content)
 {
   content->appendCitation(item_.qid);
 }
