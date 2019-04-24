@@ -170,6 +170,7 @@ class DataFileContent : private boost::noncopyable
   std::string Dump() const;
   void Update(const nlohmann::json& resp);
   void Remove(const std::string& qid);
+  nlohmann::json Find(const std::string& qid) { return data_.at(qid); }
   bool Found(const std::string& qid) { return data_.find(qid) != data_.end(); }
   std::unordered_map<std::string, nlohmann::json>& All() 
   {

@@ -15,7 +15,6 @@ void SetupConvertSubCommand(CLI::App& app)
   auto cmd = app.add_subcommand("convert", "convert citation data to bibtex file.");
   ConvertSubCmdOpt opt;
   auto t = cmd->add_option("-t,--to-file", opt.output_path, "the path for file to be written");
-  t->required();
 
   cmd->callback([&opt]() { RunConvertSubCommand(opt); });
 }
@@ -31,16 +30,15 @@ void RunConvertSubCommand(const ConvertSubCmdOpt& opt)
   for (auto [k,v] : items ) {
     cout << k<<endl;
   }
+  
   ofstream out(opt.output_path, ios::out | ios::trunc);
   for (const auto& qid : qids) {
-    auto j = items.find(qid);
-    cout<< qid << (j == items.end()) << std::endl;
-    if (j == items.end()) {
+    if (!content->data.Found(qid)) {
       continue;
     }
-
-  cout << JsonToBibTex(*j, content.get());
-   out << JsonToBibTex(*j, content.get());
+    json j = content->data.Find(qid);
+  cout << JsonToBibTex(j, content.get());
+   out << JsonToBibTex(j, content.get());
   }
 }
 

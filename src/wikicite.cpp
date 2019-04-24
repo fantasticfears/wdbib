@@ -120,8 +120,9 @@ std::string JsonToBibTex(const nlohmann::json& j, const WdbibFileContent* conten
   header += content->spec.Find(cite.qid)->toString();
   
   vector<string> body;
+  // TODO: refactor to output keys
   body.push_back(fmt::format("title = {}", cite.title));
-  return absl::StrCat(header, "{", absl::StrJoin(body, ","), "}\n");
+  return absl::StrCat(header, ",\n", absl::StrJoin(body, ",\n"), "\n}\n");
 }
 
 WikiCiteItem WikidataToWikicite(const wd::WikidataItem& item)
