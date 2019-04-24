@@ -28,14 +28,21 @@ struct DataValue
   string value;
 };
 
+struct Snak
+{
+  DataValue dv;
+  string snaktype;
+};
+
 struct WikidataItem
 {
   string id;
   unordered_map<string, vector<string>> labels;
-  unordered_map<string, string> descriptions;
-  unordered_map<string, DataValue> claims;
+  unordered_map<string, vector<string>> descriptions;
+  unordered_map<string, Snak> claims;
 };
 
+void from_json(const json& j, Snak& snak);
 void from_json(const json& j, WikidataItem& p);
 
 }  // namespace wd

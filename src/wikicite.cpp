@@ -1,6 +1,7 @@
 #include "wikicite.h"
 
 #include <string>
+#include <iostream>
 
 #include <fmt/format.h>
 #include <absl/strings/str_cat.h>
@@ -24,45 +25,66 @@ const unordered_map<WikidataProperty, string> gkWikidataProp = {
 
 namespace wd {
 
+// See: https://www.mediawiki.org/wiki/Wikibase/DataModel/JSON
+void from_json(const json& j, Snak& snak)
+{
+  auto dt = j.find("datatype");
+  if (dt == j.end()) {
+    return;
+  }
+  j.at("snaktype").get_to(snak.snaktype);
+  auto dv = j.at("datavalue").at("value");
+  if (*dt == "wikibase-item") {
+    snak.dv.type = DataValueType::WikibaseEntityId;
+    dv.at("id").get_to(snak.dv.value);
+  } else if (*dt == "string") {
+    snak.dv.type = DataValueType::String;
+    dv.get_to(snak.dv.value);
+  } else if (*dt == "monolingualtext") {
+    snak.dv.type = DataValueType::MonolingualText;
+    snak.dv.value = fmt::format("{}@{}", dv.at("text").get<string>(), dv.at("language").get<string>());
+  } else if (*dt == "quantity") {
+    snak.dv.type = DataValueType::Quantity;
+    dv.at("amount").get_to(snak.dv.value);
+  } else if (*dt == "time") {
+    snak.dv.type = DataValueType::Time;
+    dv.at("time").get_to(snak.dv.value);
+  }
+}
+
 void from_json(const json& j, WikidataItem& p)
 {
   j.at("id").get_to(p.id);
-  auto labels = j.at("labels");
-  for (auto& [key, value] : labels.items()) {
-    p.labels[key].push_back(value.at("value").get<string>());
+  try {
+    for (auto& [key, value] : j.at("labels").items()) {
+      p.labels[key].push_back(value.at("value").get<string>());
+    }
+  } catch (...) {
   }
-  auto descriptions = j.at("descriptions");
-  for (auto& [key, value] : descriptions.items()) {
-    p.descriptions[key] = value.at("value").get<string>();
+  try {
+    for (auto& [key, value] : j.at("descriptions").items()) {
+      p.descriptions[key].push_back(value.at("value").get<string>());
+    }
+  } catch (...) {
   }
-  auto aliases = j.at("aliases");
-  for (auto& [key, value] : aliases.items()) {
-    p.labels[key].push_back(value.at("value").get<string>());
+  try {
+    for (auto& [key, value] : j.at("aliases").items()) {
+      p.labels[key].push_back(value.at("value").get<string>());
+    }
+  } catch (...) {
+
   }
 
-  auto claims = j.at("claims");
-  for (auto& [key, value] : claims.items()) {
-    auto mainsnak = value.at(0).at("mainsnak");
-    auto dt = mainsnak.find("datatype");
-    if (dt == mainsnak.end()) {
-      continue;
+  try {
+    for (auto& [key, values] : j.at("claims").items()) {
+      try {
+        if (!values.empty()){
+          values.front().at("mainsnak").get_to(p.claims[key]);
+        }
+      } catch (...) {}
     }
-    auto dv = mainsnak.at("datavalue").at("value");
-    if (*dt == "wikibase-item") {
-      auto obj = dv.at("id").get<string>();
-      p.claims[key] = DataValue{DataValueType::WikibaseEntityId, obj};
-    } else if (*dt == "string") {
-      p.claims[key] = DataValue{DataValueType::String, dv.get<string>()};
-    } else if (*dt == "monolingualtext") {
-      p.claims[key] = DataValue{DataValueType::MonolingualText,
-                                dv.at("text").get<string>()};
-    } else if (*dt == "quantity") {
-      p.claims[key] =
-          DataValue{DataValueType::Quantity, dv.at("amount").get<string>()};
-    } else if (*dt == "time") {
-      p.claims[key] =
-          DataValue{DataValueType::Time, dv.at("time").get<string>()};
-    }
+  } catch (...) {
+    
   }
 }
 
@@ -71,7 +93,9 @@ void from_json(const json& j, WikidataItem& p)
 std::string JsonToBibTex(const nlohmann::json& j, const WdbibFileContent* content)
 {
   wd::WikidataItem item;
+
   wd::from_json(j, item);
+          throw InvalidWikiciteItemError("not a valid wikicite item");
   auto cite = WikidataToWikicite(item);
 
   string header;
@@ -102,22 +126,22 @@ WikiCiteItem WikidataToWikicite(const wd::WikidataItem& item)
   cite.qid = item.id;
 
   /* we must understand the type because of its importance and we need to filter random entities. */
-  try {
-    auto& instance_of_dv = item.claims.at(gkWikidataProp.at(WikidataProperty::kInstanceOf));
-    if (instance_of_dv.type == wd::DataValueType::WikibaseEntityId) {
-      try {
-        cite.instance_of = gkWikiciteProps.at(instance_of_dv.value);
-      } catch (...) {
-        throw InvalidWikiciteItemError("not a valid wikicite item");
-      }
-    } else {
-      throw WikidataParsingError("item has a different type than expected.");
-    }
-  } catch (...) {
-    throw WikidataParsingError("item doesn't have type information");
-  }
+  // try {
+  //   auto& instance_of_dv = item.claims.at(gkWikidataProp.at(WikidataProperty::kInstanceOf))[0];
+  //   if (instance_of_dv.type == wd::DataValueType::WikibaseEntityId) {
+  //     try {
+  //       cite.instance_of = gkWikiciteProps.at(instance_of_dv.value);
+  //     } catch (...) {
+  //       throw InvalidWikiciteItemError("not a valid wikicite item");
+  //     }
+  //   } else {
+  //     throw WikidataParsingError("item has a different type than expected.");
+  //   }
+  // } catch (...) {
+  //   throw WikidataParsingError("item doesn't have type information");
+  // }
 
-  cite.title = item.labels.at("en").front();
+  // cite.title = item.labels.at("en").front();
   return cite;
 }
 

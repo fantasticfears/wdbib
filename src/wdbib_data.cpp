@@ -103,8 +103,10 @@ void DataFileContent::Update(const nlohmann::json& data)
   try {
     auto id = data.get<wd::WikidataItem>().id;
     auto p = data_.find(id);
+
     if (p == data_.end()) {
       data_.insert({id, data});
+      set_updated(true);
     } else if (data != p->second) {
       p->second = data;
       set_updated(true);
@@ -130,13 +132,11 @@ void DataFileContent::Remove(const std::string& qid) { data_.erase(qid); }
 
 string DataFileContent::Dump() const
 {
-  string serialized = "{";
-
+  vector<string> d;
   for (const auto& [k, v] : data_) {
-    absl::StrAppend(&serialized, "\"", k, "\":", v.get<std::string>());
+    d.push_back(absl::StrCat("\"", k, "\":", v.dump()));
   }
-  absl::StrAppend(&serialized, "}");
-  return serialized;
+  return absl::StrCat("{", absl::StrJoin(d, ","), "}");
 }
 
 unique_ptr<SpecLine> MakeSpecLine(const Citation& item)

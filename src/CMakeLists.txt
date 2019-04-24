@@ -28,9 +28,8 @@ add_executable(wdbib_test
     system_test.cpp
     spec_stateful_parser_test.cpp
     wdbib_data_test.cpp
-)
-# network/wikidata_test.cpp
-# storage/data_file_test.cpp
+    wikicite_test.cpp
+    )
 
 target_link_libraries(wdbib_test PRIVATE libwdbib spdlog::spdlog CLI11::CLI11 nlohmann_json::nlohmann_json unofficial::abseil::strings ${Boost_LIBRARIES} fmt::fmt-header-only Catch2::Catch2)
 target_include_directories(wdbib_test PRIVATE ${Boost_INCLUDE_DIRS})
