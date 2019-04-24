@@ -90,6 +90,11 @@ void from_json(const json& j, WikidataItem& p)
 
 }  // namespace wd
 
+wd::WikidataItem TryParseWikidataJson(const nlohmann::json& j, const std::string qid)
+{
+  return j.at("entities").at(qid).get<wd::WikidataItem>();
+}
+
 std::string JsonToBibTex(const nlohmann::json& j, const WdbibFileContent* content)
 {
   wd::WikidataItem item;
@@ -126,20 +131,20 @@ WikiCiteItem WikidataToWikicite(const wd::WikidataItem& item)
   cite.qid = item.id;
 
   /* we must understand the type because of its importance and we need to filter random entities. */
-  // try {
-  //   auto& instance_of_dv = item.claims.at(gkWikidataProp.at(WikidataProperty::kInstanceOf))[0];
-  //   if (instance_of_dv.type == wd::DataValueType::WikibaseEntityId) {
-  //     try {
-  //       cite.instance_of = gkWikiciteProps.at(instance_of_dv.value);
-  //     } catch (...) {
-  //       throw InvalidWikiciteItemError("not a valid wikicite item");
-  //     }
-  //   } else {
-  //     throw WikidataParsingError("item has a different type than expected.");
-  //   }
-  // } catch (...) {
-  //   throw WikidataParsingError("item doesn't have type information");
-  // }
+  try {
+    auto& instance_of_dv = item.claims.at(gkWikidataProp.at(WikidataProperty::kInstanceOf)).dv;
+    if (instance_of_dv.type == wd::DataValueType::WikibaseEntityId) {
+      try {
+        cite.instance_of = gkWikiciteProps.at(instance_of_dv.value);
+      } catch (...) {
+        throw InvalidWikiciteItemError("not a valid wikicite item");
+      }
+    } else {
+      throw WikidataParsingError("item has a different type than expected.");
+    }
+  } catch (std::out_of_range) {
+    throw WikidataParsingError("item doesn't have type information");
+  }
 
   // cite.title = item.labels.at("en").front();
   return cite;

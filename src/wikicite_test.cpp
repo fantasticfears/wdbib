@@ -61,4 +61,33 @@ TEST_CASE("parse a wikidata item's snak", "[parsing]")
   REQUIRE_THAT(item.claims["P31"].dv.value, Equals("Q277759"));
 }
 
+TEST_CASE("parse a wikidata item from API", "[parsing]")
+{
+  auto buf = json::parse(readFixtureFile("src/fixtures/Q163335.json.downloaded"));
+  REQUIRE_NOTHROW(TryParseWikidataJson(buf, "Q163335"));
+  REQUIRE_THROWS(TryParseWikidataJson(buf, "Q1"));
+}
+
+TEST_CASE("loads Wikidata property table", "[!hide][data]")
+{
+}
+
+TEST_CASE("transform a wikidata item to wikicite item", "[transformation]")
+{
+  SECTION("when an entity is not a wikicite item") {
+    auto buf = json::parse(readFixtureFile("src/fixtures/Q163335.json.downloaded"));
+    auto item = TryParseWikidataJson(buf, "Q163335");
+    REQUIRE_THROWS(WikidataToWikicite(item));
+  }
+
+  SECTION("when an entity is a wikicite item") {
+    auto buf = json::parse(readFixtureFile("src/fixtures/Q21090025.json.downloaded"));
+    auto item = TryParseWikidataJson(buf, "Q21090025");
+    auto cite = WikidataToWikicite(item);
+    REQUIRE_THAT(cite.qid, Equals("Q21090025"));
+    REQUIRE(cite.instance_of == WikiCiteItemType::kArticle);
+  }
+  
+}
+
 }  // namespace wdbib

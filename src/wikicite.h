@@ -28,6 +28,7 @@ struct DataValue
   string value;
 };
 
+// simplified
 struct Snak
 {
   DataValue dv;
@@ -37,8 +38,10 @@ struct Snak
 struct WikidataItem
 {
   string id;
+  // simplified: aliases are merged to labels
   unordered_map<string, vector<string>> labels;
   unordered_map<string, vector<string>> descriptions;
+  // simplified: only includes one `mainsnak`!
   unordered_map<string, Snak> claims;
 };
 
@@ -93,6 +96,7 @@ struct WikiCiteItem
 };
 
 struct WdbibFileContent;
+wd::WikidataItem TryParseWikidataJson(const nlohmann::json& j, const std::string qid);
 std::string JsonToBibTex(const nlohmann::json& j, const WdbibFileContent* content);
 WikiCiteItem WikidataToWikicite(const wd::WikidataItem& item);
 

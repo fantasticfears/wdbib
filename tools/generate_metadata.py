@@ -10,7 +10,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 TYPES = {
     "article": "WikiCiteItemType::kArticle",
     "article-newspaper": "WikiCiteItemType::kMisc",
-    "article-journal": "WikiCiteItemType::kMisc",
+    "article-journal": "WikiCiteItemType::kArticle",
     "article-magazine": "WikiCiteItemType::kMisc",
     "thesis": "WikiCiteItemType::kMisc",
     "dataset": "WikiCiteItemType::kMisc",
