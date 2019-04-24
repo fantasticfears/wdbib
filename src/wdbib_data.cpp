@@ -4,6 +4,7 @@
 #include <absl/strings/str_join.h>
 #include "spdlog/spdlog.h"
 
+#include <iostream>
 #include "errors.h"
 
 namespace wdbib {
@@ -123,8 +124,8 @@ void DataFileContent::Update(const nlohmann::json& data)
  */
 void DataFileContent::Load(const nlohmann::json& data)
 {
-  for (auto& el : data.items()) {
-    data_.insert({el.key(), json(el.value())});
+  for (auto& [key, value] : data.items()) {
+    data_.insert({key, value});
   }
 }
 

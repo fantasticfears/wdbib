@@ -97,11 +97,11 @@ wd::WikidataItem TryParseWikidataJson(const nlohmann::json& j, const std::string
 
 std::string JsonToBibTex(const nlohmann::json& j, const WdbibFileContent* content)
 {
-  wd::WikidataItem item;
-
-  wd::from_json(j, item);
-          throw InvalidWikiciteItemError("not a valid wikicite item");
+  wd::WikidataItem item = j.get<wd::WikidataItem>();
   auto cite = WikidataToWikicite(item);
+  if (!content->spec.Found(cite.qid)) {
+    throw WikiciteItemNotFoundError(fmt::format("Item {} not fonud.", cite.qid));
+  }
 
   string header;
   switch (cite.instance_of)
@@ -120,7 +120,7 @@ std::string JsonToBibTex(const nlohmann::json& j, const WdbibFileContent* conten
   header += content->spec.Find(cite.qid)->toString();
   
   vector<string> body;
-  body.push_back(fmt::format("title = {%s}", cite.title));
+  body.push_back(fmt::format("title = {}", cite.title));
   return absl::StrCat(header, "{", absl::StrJoin(body, ","), "}\n");
 }
 

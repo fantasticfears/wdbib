@@ -2,8 +2,11 @@
 
 #include "wikicite.h"
 
+#include <iostream>
 #include <fstream>
 #include <string>
+
+#include "wdbib_data.h"
 
 namespace wdbib {
 
@@ -23,6 +26,7 @@ std::string readFixtureFile(const std::string& path)
 }
 
 using Catch::Matchers::Equals;
+using Catch::Matchers::Contains;
 
 TEST_CASE("parse a wikidata item's id", "[parsing]")
 {
@@ -86,6 +90,17 @@ TEST_CASE("transform a wikidata item to wikicite item", "[transformation]")
     auto cite = WikidataToWikicite(item);
     REQUIRE_THAT(cite.qid, Equals("Q21090025"));
     REQUIRE(cite.instance_of == WikiCiteItemType::kArticle);
+  }
+  
+}
+
+TEST_CASE("transform a wikicite item to bibtex", "[transformation]")
+{
+  SECTION("when an entity is a wikicite item") {
+    auto buf = json::parse(readFixtureFile("src/fixtures/Q21090025.json.downloaded")).at("entities").at("Q21090025");
+    WdbibFileContent content;
+    content.spec.Append(make_unique<SpecLine>("", "", make_unique<ParsedSpecCitationBody>(Citation{"Q21090025", {}})));
+    REQUIRE_THAT(JsonToBibTex(buf, &content), Contains("@article{"));
   }
   
 }

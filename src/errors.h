@@ -34,6 +34,13 @@ class InvalidWikiciteItemError : public std::runtime_error
   explicit InvalidWikiciteItemError(const char* what) : std::runtime_error(what) {}
 };
 
+class WikiciteItemNotFoundError : public std::runtime_error
+{
+ public:
+  explicit WikiciteItemNotFoundError(const std::string& what) : std::runtime_error(what) {}
+  explicit WikiciteItemNotFoundError(const char* what) : std::runtime_error(what) {}
+};
+
 }  // namespace wdbib
 
 #endif  // ERRORS_H_
