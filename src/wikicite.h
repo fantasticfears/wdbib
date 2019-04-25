@@ -52,39 +52,12 @@ void from_json(const json& j, WikidataItem& p);
 
 enum class WikiCiteItemType
 {
-  kArticle,
-  kBook,
-  kMisc,
-  kWebpage
+#include "_wikicite_types_enum.gdh"
 };
 
 enum class WikidataProperty
 {
-  kInstanceOf,
-  kAuthor,
-  kDirector,
-  kComposer,
-  kEditor,
-  kIllustrator,
-  kPublisher,
-  kGenre,
-  kISBN,
-  kISSN,
-  kPublisherPlace,
-  kPage,
-  kVersion,
-  kDOI,
-  kEdition,
-  kIssue,
-  kVolume,
-  kIssued,
-  kTranslator,
-  kPMID,
-  kPMCID,
-  kURL,
-  kNnumberOfPages,
-  kContainerTitle,
-  kTitle
+#include "_wikicite_props_enum.gdh"
 };
 
 struct WikiCiteItem
