@@ -2,6 +2,8 @@
 
 #include <fstream>
 
+#include "spdlog/spdlog.h"
+
 #include "../storage/data_file.h"
 #include "../wikicite.h"
 #include "../wdbib_data.h"
@@ -25,10 +27,9 @@ void RunConvertSubCommand(const ConvertSubCmdOpt& opt)
   auto content = file::LoadWdbibData(bib);
 
   auto qids = content->spec.QIDs();
-  auto items = content->data.All();
 
-  for (auto [k,v] : items ) {
-    cout << k<<endl;
+  for (auto [k,v] : content->data.All()) {
+    spdlog::get("stderr")->debug(k);
   }
   
   ofstream out(opt.output_path, ios::out | ios::trunc);
@@ -37,8 +38,8 @@ void RunConvertSubCommand(const ConvertSubCmdOpt& opt)
       continue;
     }
     json j = content->data.Find(qid);
-  cout << JsonToBibTex(j, content.get());
-   out << JsonToBibTex(j, content.get());
+    cout << JsonToBibTex(j, content.get());
+    out << JsonToBibTex(j, content.get());
   }
 }
 

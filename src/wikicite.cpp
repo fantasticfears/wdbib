@@ -95,6 +95,18 @@ wd::WikidataItem TryParseWikidataJson(const nlohmann::json& j, const std::string
   return j.at("entities").at(qid).get<wd::WikidataItem>();
 }
 
+class BibTexPairFormatter
+{
+public:
+  explicit BibTexPairFormatter(int16_t indent = 2): indent_(indent, ' ') {}
+  void operator()(std::string* out, const pair<string, string>& item) const
+  {
+    absl::StrAppend(out, indent_, item.first, " = {", item.second, "}");
+  }
+private:
+  string indent_;
+};
+
 std::string JsonToBibTex(const nlohmann::json& j, const WdbibFileContent* content)
 {
   wd::WikidataItem item = j.get<wd::WikidataItem>();
@@ -119,10 +131,9 @@ std::string JsonToBibTex(const nlohmann::json& j, const WdbibFileContent* conten
 
   header += content->spec.Find(cite.qid)->toString();
   
-  vector<string> body;
-  // TODO: refactor to output keys
-  body.push_back(fmt::format("title = {}", cite.title));
-  return absl::StrCat(header, ",\n", absl::StrJoin(body, ",\n"), "\n}\n");
+  vector<pair<string, string>> body;
+  body.push_back(make_pair("title", cite.title));
+  return absl::StrCat(header, ",\n", absl::StrJoin(body, ",\n\n", BibTexPairFormatter()), "\n}\n");
 }
 
 WikiCiteItem WikidataToWikicite(const wd::WikidataItem& item)
