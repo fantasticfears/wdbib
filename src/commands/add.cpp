@@ -55,31 +55,40 @@ void verifyAddOpt(const AddSubCmdOpt& opt)
 void RunAddSubCommand(const AddSubCmdOpt& opt)
 {
   verifyAddOpt(opt);
-  auto pool_size = std::max(opt.qids.size(), kMaxThreadPoolSize);
-  spinners::MultiLineSpinner spinner(pool_size);
+
   BibDataFile bib(kDefaultDataFilename, kDefaultCachedDataExtrension);
   auto content = file::LoadWdbibData(bib);
 
   vector<optional<CitationResult>> cites(opt.qids.size(), nullopt);
-  int i = 0;
-  for (const auto& qid : opt.qids) {
-    if (!content->spec.Found(qid)) {
-      spinner.register_append({spinners::SpinnerStatus::kPending,
-                               absl::StrCat("Adding ", qid, "..."),
-                               absl::StrCat("Adding ", qid, " done"), [&, i]() {
-                                 try {
-                                   cites[i] = requestCitationFromQID(qid);
-                                 } catch (...) {
-                                 }
-                               }});
-    } else {
-      spinner.register_append({spinners::SpinnerStatus::kFinished, "",
-                               absl::StrCat("Found ", qid), []() {}});
-    }
 
-    i++;
+  if (opt.qids.size() > 1) {
+    auto pool_size = std::max(opt.qids.size(), kMaxThreadPoolSize);
+    spinners::MultiLineSpinner spinner(pool_size);
+    int i = 0;
+    for (const auto& qid : opt.qids) {
+      if (!content->spec.Found(qid)) {
+        spinner.register_append({spinners::SpinnerStatus::kPending,
+                                absl::StrCat("Adding ", qid, "..."),
+                                absl::StrCat("Adding ", qid, " done"), [&, i]() {
+                                  try {
+                                    cites[i] = requestCitationFromQID(qid);
+                                  } catch (...) {
+                                  }
+                                }});
+      } else {
+        spinner.register_append({spinners::SpinnerStatus::kFinished, "",
+                                absl::StrCat("Found ", qid), []() {}});
+      }
+      i++;
+    }
+    spinner.LoopSpinner();
+  } else {
+    const auto& qid = opt.qids.front();
+    cout << "Adding " << qid << "..." << "\r";
+    cites[0] = requestCitationFromQID(qid);
+    cout << "Adding " << qid << " done" << endl;
   }
-  spinner.LoopSpinner();
+
   for (const auto& cite : cites) {
     if (cite) {
       content->spec.Append(MakeSpecLine(cite->first));
