@@ -40,8 +40,21 @@ optional<CitationResult> requestCitationFromQID(const string& qid)
 
 constexpr size_t kMaxThreadPoolSize = 8;
 
+void verifyAddOpt(const AddSubCmdOpt& opt)
+{
+  if (opt.qids.empty()) {
+    throw CLI::RequiresError(
+        "Nothing specified, nothing added.\n\n"
+        "A citation item is needed. Try:\n"
+        "  wdbib add -q Q24347512\n"
+        "  wdbib add -q Q36317269 Q24347512\n",
+        1);
+  }
+}
+
 void RunAddSubCommand(const AddSubCmdOpt& opt)
 {
+  verifyAddOpt(opt);
   auto pool_size = std::max(opt.qids.size(), kMaxThreadPoolSize);
   spinners::MultiLineSpinner spinner(pool_size);
   BibDataFile bib(kDefaultDataFilename, kDefaultCachedDataExtrension);
@@ -55,8 +68,7 @@ void RunAddSubCommand(const AddSubCmdOpt& opt)
                                absl::StrCat("Adding ", qid, "..."),
                                absl::StrCat("Adding ", qid, " done"), [&, i]() {
                                  try {
-                                   cites[i] =
-                                       requestCitationFromQID(qid);
+                                   cites[i] = requestCitationFromQID(qid);
                                  } catch (...) {
                                  }
                                }});

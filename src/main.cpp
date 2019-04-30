@@ -38,7 +38,10 @@ int main(int argc, char** argv)
   auto exit_code = 0;
   try {
     app.parse(argc, argv);
-  } catch (const CLI::ParseError& e) {
+  } catch (const CLI::RequiredError& e) {
+    std::cout << app.help() << std::endl;
+    exit_code = app.exit(e);
+  }catch (const CLI::ParseError& e) {
     exit_code = app.exit(e);
   }
   return exit_code;
