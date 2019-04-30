@@ -34,7 +34,7 @@ struct SpinnerObject
   SpinnerStatus status;
   string pending_text;
   string finsihed_text;
-  function<void(void)> callback;
+  function<void(SpinnerObject*)> callback;
 };
 
 const char* const kDotSpinner = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
@@ -73,7 +73,7 @@ class MultiLineSpinner
           cout << iter->pending_text << " " << ch;
 
           boost::asio::post(pool, [=]() {
-            iter->callback();
+            iter->callback(&(*iter));
             iter->status = SpinnerStatus::kFinished;
           });
           break;

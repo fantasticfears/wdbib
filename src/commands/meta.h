@@ -9,6 +9,8 @@
 
 namespace wdbib {
 
+extern const size_t kMaxThreadPoolSize;
+
 struct AddSubCmdOpt
 {
   std::vector<std::string> qids;
@@ -40,7 +42,6 @@ struct ConvertSubCmdOpt
 };
 void SetupConvertSubCommand(CLI::App& app);
 void RunConvertSubCommand(const ConvertSubCmdOpt& opt);
-
 
 }  // namespace wdbib
 

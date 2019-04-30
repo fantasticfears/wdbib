@@ -19,6 +19,7 @@
 namespace wdbib {
 
 using namespace std;
+const size_t kMaxThreadPoolSize = 8;
 
 void SetupAddSubCommand(CLI::App& app)
 {
@@ -29,7 +30,7 @@ void SetupAddSubCommand(CLI::App& app)
   cmd->callback([opt]() { RunAddSubCommand(*opt); });
 }
 
-typedef pair<Citation, json> CitationResult;
+typedef std::pair<Citation, json> CitationResult;
 optional<CitationResult> requestCitationFromQID(const string& qid)
 {
   auto item = GetWikidataItem(qid);
@@ -37,8 +38,6 @@ optional<CitationResult> requestCitationFromQID(const string& qid)
 
   return {make_pair(cite, item.second)};
 }
-
-constexpr size_t kMaxThreadPoolSize = 8;
 
 void verifyAddOpt(const AddSubCmdOpt& opt)
 {
@@ -69,7 +68,7 @@ void RunAddSubCommand(const AddSubCmdOpt& opt)
       if (!content->spec.Found(qid)) {
         spinner.register_append({spinners::SpinnerStatus::kPending,
                                 absl::StrCat("Adding ", qid, "..."),
-                                absl::StrCat("Adding ", qid, " done"), [&, i]() {
+                                absl::StrCat("Adding ", qid, " done"), [&, i](spinners::SpinnerObject*) {
                                   try {
                                     cites[i] = requestCitationFromQID(qid);
                                   } catch (...) {
@@ -77,7 +76,7 @@ void RunAddSubCommand(const AddSubCmdOpt& opt)
                                 }});
       } else {
         spinner.register_append({spinners::SpinnerStatus::kFinished, "",
-                                absl::StrCat("Found ", qid), []() {}});
+                                absl::StrCat("Found ", qid), [](spinners::SpinnerObject*) {}});
       }
       i++;
     }
