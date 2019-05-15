@@ -176,6 +176,7 @@ unique_ptr<ParsedSpecLine> SpecStatefulParser::nextBodyCitation(
         absl::StrCat("incorrect citation item at line ", line_num_));
   }
 
+  // TODO: check synced database.
   Citation cite{parts.front(), {}};
   if (hints_ != nullptr) {
     size_t i = 1;

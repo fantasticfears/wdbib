@@ -43,7 +43,7 @@ class SpecStatefulParser : private boost::noncopyable
   std::unique_ptr<ParsedSpecLine> nextBodyCitation(std::string_view content);
 
  private:
-  ParserStatus status_ = ParserStatus::kStart;
+  ParserStatus status_ = ParserStatus::kBody;
 
   SpecFileContent* spec_;
   int64_t line_num_ = 0;

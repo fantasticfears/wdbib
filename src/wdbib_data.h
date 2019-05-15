@@ -47,7 +47,7 @@ class ParsedSpecBody : public ParsedSpecLine
 struct Citation
 {
   std::string qid;
-  std::vector<std::string> aux_info;
+  vector<std::string> aux_info;
 };
 
 enum class HintType
