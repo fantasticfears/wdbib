@@ -20,7 +20,7 @@ TEST_CASE("SpecFileContent can dump the data")
   REQUIRE_THAT(content.Dump(), Equals("Q13\n"));
 }
 
-TEST_CASE("round trip parsing citation")
+TEST_CASE("round trip parsing citation: simple")
 {
   SpecFileContent content;
   SpecStatefulParser p(&content);

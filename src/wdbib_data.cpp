@@ -148,7 +148,10 @@ SpecLine GetSpecLineFromCitation(const Citation& item)
                                make_unique<ParsedSpecCitationBody>(item) };
 }
 
-string ParsedSpecVersionHeader::toString() { return absl::StrCat(version_); }
+string ParsedSpecVersionHeader::toString()
+{
+  return absl::StrCat(key_, version_);
+}
 
 // extern const char* const kHeaderHintModifierDelimiter;
 // const char* const gkPathDelimiter = ":";
@@ -160,7 +163,7 @@ struct HintsFormatter
   {
     switch (hint.type) {
     case HintType::kTitle:
-      absl::StrAppend(out, "title");
+      absl::StrAppend(out, "[title");
       break;
     default:
       break;
@@ -173,13 +176,14 @@ struct HintsFormatter
     default:
       break;
     }
+    absl::StrAppend(out, "]");
   }
 };
 
 extern const char* const gkHeaderHintsDelimiter;
 string ParsedSpecHintsHeader::toString()
 {
-  return absl::StrJoin(hints_, gkHeaderHintsDelimiter, HintsFormatter());
+  return absl::StrCat(key_, absl::StrJoin(hints_, gkHeaderHintsDelimiter, HintsFormatter()));
 }
 
 extern const char* const gkPathDelimiter;

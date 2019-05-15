@@ -36,8 +36,8 @@ class SpecStatefulParser : private boost::noncopyable
   std::string probeState(const std::string& line);
   std::unique_ptr<ParsedSpecLine> nextHeader(std::string_view content);
   std::unique_ptr<ParsedSpecLine> nextHeaderLine();
-  std::unique_ptr<ParsedSpecLine> nextHeaderVersion(std::string_view content);
-  std::unique_ptr<ParsedSpecLine> nextHeaderHints(std::string_view content);
+  std::unique_ptr<ParsedSpecLine> nextHeaderVersion(const std::string& key, std::string_view content);
+  std::unique_ptr<ParsedSpecLine> nextHeaderHints(const std::string& key, std::string_view content);
   std::unique_ptr<ParsedSpecLine> nextBody(std::string_view content);
   std::unique_ptr<ParsedSpecLine> nextBodyLine();
   std::unique_ptr<ParsedSpecLine> nextBodyCitation(std::string_view content);

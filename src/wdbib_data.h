@@ -78,20 +78,21 @@ struct SpecLine
 class ParsedSpecVersionHeader : public ParsedSpecHeader
 {
  public:
-  explicit ParsedSpecVersionHeader(int32_t version) : version_(version) {}
+  ParsedSpecVersionHeader(const std::string& key, int32_t version) : key_(key), version_(version) {}
   virtual std::string toString() final;
   virtual void PopulateSpecContent(SpecFileContent* content) final;
   ~ParsedSpecVersionHeader() {};
 
  private:
+  std::string key_;
   int32_t version_;
 };
 
 class ParsedSpecHintsHeader : public ParsedSpecHeader
 {
  public:
-  explicit ParsedSpecHintsHeader(std::vector<Hint> hints)
-      : hints_(std::move(hints))
+  ParsedSpecHintsHeader(const std::string& key, std::vector<Hint> hints)
+      : key_(key), hints_(std::move(hints))
   {}
   ~ParsedSpecHintsHeader() {};
 
@@ -100,6 +101,7 @@ class ParsedSpecHintsHeader : public ParsedSpecHeader
   std::vector<Hint>* hints() { return &hints_; };
 
  private:
+  std::string key_;
   std::vector<Hint> hints_;
 };
 class ParsedSpecLineHeader : public ParsedSpecHeader

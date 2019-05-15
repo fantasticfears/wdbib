@@ -86,10 +86,11 @@ unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeader(string_view content)
 
   auto key = absl::StripLeadingAsciiWhitespace(p.first);
   auto value = absl::StripLeadingAsciiWhitespace(p.second);
+  auto first_part = string(content.substr(0, content.find(value)));
   if (key == kHeaderVersionKey) {
-    return nextHeaderVersion(value);
+    return nextHeaderVersion(first_part, value);
   } else if (key == kHeaderHintsKey) {
-    return nextHeaderHints(value);
+    return nextHeaderHints(first_part, value);
   } else {
     throw ParsingError(
         fmt::format("invalid key items {} at line {}", key, line_num_));
@@ -102,6 +103,7 @@ unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeaderLine()
 }
 
 unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeaderVersion(
+    const std::string& key,
     string_view content)
 {
   int32_t ver = 1;
@@ -113,10 +115,11 @@ unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeaderVersion(
     throw InvalidHeaderError("invalid version. 1 is supported.");
   }
 
-  return make_unique<ParsedSpecVersionHeader>(ver);
+  return make_unique<ParsedSpecVersionHeader>(key, ver);
 }
 
 unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeaderHints(
+    const std::string& key,
     string_view content)
 {
   if (content.empty()) {
@@ -145,7 +148,7 @@ unique_ptr<ParsedSpecLine> SpecStatefulParser::nextHeaderHints(
     }
     hints.push_back({type, modifier});
   }
-  auto res = make_unique<ParsedSpecHintsHeader>(std::move(hints));
+  auto res = make_unique<ParsedSpecHintsHeader>(key, std::move(hints));
   hints_ = res.get()->hints();
   return res;
 }
