@@ -99,7 +99,7 @@ TEST_CASE("transform a wikicite item to bibtex", "[transformation]")
   SECTION("when an entity is a wikicite item") {
     auto buf = json::parse(readFixtureFile("src/fixtures/Q21090025.json.downloaded")).at("entities").at("Q21090025");
     WdbibFileContent content;
-    content.spec.Append(make_unique<SpecLine>("", "", make_unique<ParsedSpecCitationBody>(Citation{"Q21090025", {}})));
+    content.spec.Append({ "", "", make_unique<ParsedSpecCitationBody>(Citation{"Q21090025", {}}) });
     REQUIRE_THAT(JsonToBibTex(buf, &content), Contains("@article{"));
   }
   

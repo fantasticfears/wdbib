@@ -15,12 +15,14 @@ void SpecFileContent::appendCitation(const string& qid)
   loaded_citation_[qid] = ln;
 }
 
-void SpecFileContent::Append(std::unique_ptr<SpecLine> line)
+void SpecFileContent::Append(SpecLine&& line, bool update)
 {
   spec_lines_.push_back(std::move(line));
   lines_removed_.push_back(false);
-  spec_lines_.back()->parsed->PopulateSpecContent(this);
-  set_updated(true);
+  spec_lines_.back().parsed->PopulateSpecContent(this);
+  if (update) {
+    set_updated(true);
+  }
 }
 
 bool SpecFileContent::Found(const string& qid) const
@@ -36,7 +38,7 @@ ParsedSpecCitationBody* SpecFileContent::Find(const string& qid) const
     throw std::runtime_error("can't find qid.");
   }
   return dynamic_cast<ParsedSpecCitationBody*>(
-      spec_lines_[loaded_citation_.find(qid)->second]->parsed.get());
+      spec_lines_[loaded_citation_.find(qid)->second].parsed.get());
 }
 
 std::string SpecFileContent::Dump() const
@@ -74,7 +76,7 @@ std::vector<std::string> SpecFileContent::QIDs() const
   vector<string> res;
   for (auto idx : qid_spec_line_idx) {
     ParsedSpecCitationBody* b =
-        dynamic_cast<ParsedSpecCitationBody*>(spec_lines_[idx]->parsed.get());
+        dynamic_cast<ParsedSpecCitationBody*>(spec_lines_[idx].parsed.get());
     res.push_back(b->item().qid);
   }
   return res;
@@ -84,7 +86,7 @@ std::optional<const SpecLine*> SpecFileContent::Line(size_t line) const
 {
   line--;
   if (line < spec_lines_.size() && !lines_removed_[line]) {
-    return {const_cast<const SpecLine*>(spec_lines_[line].get())};
+    return {const_cast<const SpecLine*>(&spec_lines_[line])};
   } else {
     return {};
   }
@@ -140,10 +142,10 @@ string DataFileContent::Dump() const
   return absl::StrCat("{", absl::StrJoin(d, ","), "}");
 }
 
-unique_ptr<SpecLine> MakeSpecLine(const Citation& item)
+SpecLine GetSpecLineFromCitation(const Citation& item)
 {
-  return make_unique<SpecLine>("", "",
-                               make_unique<ParsedSpecCitationBody>(item));
+  return { "", "",
+                               make_unique<ParsedSpecCitationBody>(item) };
 }
 
 string ParsedSpecVersionHeader::toString() { return absl::StrCat(version_); }

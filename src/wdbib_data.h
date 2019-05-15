@@ -2,11 +2,11 @@
 #ifndef WDBIB_DATA_
 #define WDBIB_DATA_
 
+#include <memory>
 #include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <memory>
 
 #include <boost/core/noncopyable.hpp>
 #include <nlohmann/json.hpp>
@@ -26,7 +26,7 @@ class ParsedSpecLine : private boost::noncopyable
  public:
   virtual std::string toString() = 0;
   virtual void PopulateSpecContent(SpecFileContent* content) = 0;
-  virtual ~ParsedSpecLine(){};
+  virtual ~ParsedSpecLine() = default;
 };
 const char* const kLineHeaderPrefix = "# ";
 class ParsedSpecHeader : public ParsedSpecLine
@@ -34,12 +34,14 @@ class ParsedSpecHeader : public ParsedSpecLine
  public:
   virtual std::string toString() override = 0;
   virtual void PopulateSpecContent(SpecFileContent* content) override = 0;
+  virtual ~ParsedSpecHeader() = default;
 };
 class ParsedSpecBody : public ParsedSpecLine
 {
  public:
   virtual std::string toString() override = 0;
   virtual void PopulateSpecContent(SpecFileContent* content) override = 0;
+  virtual ~ParsedSpecBody() = default;
 };
 
 struct Citation
@@ -65,27 +67,21 @@ struct Hint
   HintModifier modifier;
 };
 
+// unique_ptr ensures no copy is possible. We use rule of zero for the class
 struct SpecLine
 {
- public:
   std::string data;
-  std::string_view content;
+  std::string content;
   std::unique_ptr<ParsedSpecLine> parsed;
-  SpecLine(std::string d, std::string_view c, std::unique_ptr<ParsedSpecLine> p)
-      : data(std::move(d)), content(std::move(c)), parsed(std::move(p))
-  {}
-  explicit SpecLine() = default;
-
- private:
-  BOOST_MOVABLE_BUT_NOT_COPYABLE(SpecLine)
 };
 
 class ParsedSpecVersionHeader : public ParsedSpecHeader
 {
  public:
   explicit ParsedSpecVersionHeader(int32_t version) : version_(version) {}
-  virtual std::string toString() override;
-  virtual void PopulateSpecContent(SpecFileContent* content) override;
+  virtual std::string toString() final;
+  virtual void PopulateSpecContent(SpecFileContent* content) final;
+  ~ParsedSpecVersionHeader() {};
 
  private:
   int32_t version_;
@@ -97,8 +93,10 @@ class ParsedSpecHintsHeader : public ParsedSpecHeader
   explicit ParsedSpecHintsHeader(std::vector<Hint> hints)
       : hints_(std::move(hints))
   {}
-  virtual std::string toString() override;
-  virtual void PopulateSpecContent(SpecFileContent* content) override;
+  ~ParsedSpecHintsHeader() {};
+
+  virtual std::string toString() final;
+  virtual void PopulateSpecContent(SpecFileContent* content) final;
   std::vector<Hint>* hints() { return &hints_; };
 
  private:
@@ -107,8 +105,9 @@ class ParsedSpecHintsHeader : public ParsedSpecHeader
 class ParsedSpecLineHeader : public ParsedSpecHeader
 {
  public:
-  virtual std::string toString() override { return {}; }
-  virtual void PopulateSpecContent(SpecFileContent*) override {}
+  virtual std::string toString() final { return {}; }
+  virtual void PopulateSpecContent(SpecFileContent*) final {}
+  ~ParsedSpecLineHeader() {};
 };
 
 class ParsedSpecLineBody : public ParsedSpecBody
@@ -116,28 +115,30 @@ class ParsedSpecLineBody : public ParsedSpecBody
  public:
   virtual std::string toString() override { return {}; }
   virtual void PopulateSpecContent(SpecFileContent*) override {}
+  ~ParsedSpecLineBody() {};
 };
 
 class ParsedSpecCitationBody : public ParsedSpecBody
 {
  public:
   explicit ParsedSpecCitationBody(Citation item) : item_(std::move(item)) {}
-  virtual std::string toString() override;
-  virtual void PopulateSpecContent(SpecFileContent* content) override;
+  virtual std::string toString() final;
+  virtual void PopulateSpecContent(SpecFileContent* content) final;
+  ~ParsedSpecCitationBody() {};
   Citation& item() { return item_; }
 
  private:
   Citation item_;
 };
 
-std::unique_ptr<SpecLine> MakeSpecLine(const Citation& item);
+SpecLine GetSpecLineFromCitation(const Citation& item);
 
 class SpecFileContent : private boost::noncopyable
 {
  public:
   explicit SpecFileContent() {}
   size_t Size() const { return spec_lines_.size(); }
-  void Append(std::unique_ptr<SpecLine> line);
+  void Append(SpecLine&& line, bool update = true);
   std::optional<const SpecLine*> Line(size_t line) const;
   void RemoveLine(size_t line);
   bool Found(const std::string& qid) const;
@@ -154,7 +155,7 @@ class SpecFileContent : private boost::noncopyable
   void set_updated(bool updated = true) { updated_ = updated; }
 
  private:
-  std::vector<std::unique_ptr<SpecLine>> spec_lines_;
+  std::vector<SpecLine> spec_lines_;
   std::vector<bool> lines_removed_;
   std::unordered_map<std::string, size_t> loaded_citation_;
   int32_t* version_ = nullptr;
@@ -172,10 +173,7 @@ class DataFileContent : private boost::noncopyable
   void Remove(const std::string& qid);
   nlohmann::json Find(const std::string& qid) { return data_.at(qid); }
   bool Found(const std::string& qid) { return data_.find(qid) != data_.end(); }
-  std::unordered_map<std::string, nlohmann::json>& All() 
-  {
-    return data_;
-  }
+  std::unordered_map<std::string, nlohmann::json>& All() { return data_; }
 
   // nlohmann::json& data() { return data_; }
   bool updated() const { return updated_; }

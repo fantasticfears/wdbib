@@ -44,3 +44,5 @@ Feedback from end users is more welcomed than tacking on endless usecase on Wiki
 
 The reason to output to BibTex is that the pipeline on TeX end is really complex. It would be easier
 to yield bibtex as intermediate representation.
+
+A text file should be enough because that input wouldn't be really high after all.

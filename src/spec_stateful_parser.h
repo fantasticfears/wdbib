@@ -33,7 +33,7 @@ class SpecStatefulParser : private boost::noncopyable
   void Next(std::string line);
   ParserStatus status() const { return status_; };
 
-  std::string_view probeState(const std::string& line);
+  std::string probeState(const std::string& line);
   std::unique_ptr<ParsedSpecLine> nextHeader(std::string_view content);
   std::unique_ptr<ParsedSpecLine> nextHeaderLine();
   std::unique_ptr<ParsedSpecLine> nextHeaderVersion(std::string_view content);

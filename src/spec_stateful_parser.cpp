@@ -22,7 +22,7 @@ const char* const kHeaderPrefix2 = "# ";
 const auto kLenHeaderPrefix = 1;
 const auto kLenHeaderPrefix2 = 2;
 
-string_view SpecStatefulParser::probeState(const string& line)
+string SpecStatefulParser::probeState(const string& line)
 {
   auto lstriped = absl::StripLeadingAsciiWhitespace(line);
   prefix_size_ = kLenHeaderPrefix;
@@ -50,7 +50,7 @@ string_view SpecStatefulParser::probeState(const string& line)
   if (status_ == ParserStatus::kHeader) {
     lstriped.remove_prefix(prefix_size_);
   }
-  return absl::StripAsciiWhitespace(lstriped);
+  return string(absl::StripAsciiWhitespace(lstriped));
 }
 
 void SpecStatefulParser::Next(string line)
@@ -58,18 +58,14 @@ void SpecStatefulParser::Next(string line)
   line_num_++;
   absl::StripTrailingAsciiWhitespace(&line);
 
-  auto spec_line = make_unique<SpecLine>();
-  spec_line->data = line;
-  spec_line->content = probeState(spec_line->data);
+  auto content = probeState(line);
 
   switch (status_) {
   case ParserStatus::kHeader:
-    spec_line->parsed = nextHeader(spec_line->content); 
-    spec_->Append(std::move(spec_line));
+    spec_->Append({ line, content, nextHeader(content) });
     break;
   case ParserStatus::kBody:
-    spec_line->parsed = nextBody(spec_line->content);
-    spec_->Append(std::move(spec_line));
+    spec_->Append({ line, content, nextBody(content) });
     break;
   default:
     throw ParsingError(

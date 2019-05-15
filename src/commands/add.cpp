@@ -90,7 +90,7 @@ void RunAddSubCommand(const AddSubCmdOpt& opt)
 
   for (const auto& cite : cites) {
     if (cite) {
-      content->spec.Append(MakeSpecLine(cite->first));
+      content->spec.Append(GetSpecLineFromCitation(cite->first));
       content->data.Update(cite->second);
     }
   }

@@ -11,6 +11,15 @@ namespace wdbib {
 
 using namespace Catch;
 
+TEST_CASE("SpecFileContent can dump the data")
+{
+  SpecFileContent content;
+  SpecStatefulParser p(&content);
+  p.Next("Q13");
+
+  REQUIRE_THAT(content.Dump(), Equals("Q13\n"));
+}
+
 TEST_CASE("round trip parsing citation")
 {
   SpecFileContent content;
@@ -26,7 +35,8 @@ TEST_CASE("round trip parsing citation")
     }
   });
   REQUIRE(content.Found("Q1633352"));
-  REQUIRE_THAT(content.Dump(), Equals(load.str()));
+  string file_content = load.str();
+  REQUIRE_THAT(content.Dump(), Equals(file_content));
 }
 
 TEST_CASE("manages qids")
