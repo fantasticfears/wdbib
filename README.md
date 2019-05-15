@@ -7,7 +7,7 @@ It can:
 
 - Store citation keys
 - Be in the pipeline for Biber consumption
-- Search citation data on Wikidata
+- <del>Search citation data on Wikidata</del>
 
 ## Files
 
