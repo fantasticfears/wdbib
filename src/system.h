@@ -6,7 +6,7 @@
 
 namespace wdbib {
 
-const char* const kVersion = "0.0.1";
+const char* const kVersion = "0.1.0";
 
 std::string GetUserAgent();
 
