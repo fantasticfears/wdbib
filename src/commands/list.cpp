@@ -12,6 +12,8 @@
 
 namespace wdbib {
 
+using namespace std;
+
 void SetupListSubCommand(CLI::App& app)
 {
   auto cmd =
@@ -21,6 +23,11 @@ void SetupListSubCommand(CLI::App& app)
 
 constexpr auto kLocalStatus = "local";
 constexpr auto kCachedStatus = "cached";
+
+string printReferenceDetails(nlohmann::json cite)
+{
+  return "  Title: " + cite["labels"]["en"]["value"].get<std::string>();
+}
 
 void RunListSubCommand()
 {
@@ -38,6 +45,9 @@ void RunListSubCommand()
            << "] ";
     }
     cout << rang::fg::blue << qid << rang::fg::reset << endl;
+    if (status != kLocalStatus) {
+      cout << printReferenceDetails(content->data.Find(qid)) << endl;
+    }
   }
 }
 
