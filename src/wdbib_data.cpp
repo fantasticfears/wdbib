@@ -54,7 +54,7 @@ std::string SpecFileContent::Dump() const
       if (rendered == content) {
         absl::StrAppend(&res, data, "\n");
       } else {
-        absl::StrAppend(&res, data.substr(data.find(content)), rendered, "\n");
+        absl::StrAppend(&res, data.substr(0, data.find(content)), rendered, "\n");
         spdlog::get("stderr")->debug("dump spec: %s\n", res);
         spdlog::get("stderr")->debug("content stored: %s\n", content);
       }
